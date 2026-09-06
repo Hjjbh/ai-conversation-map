@@ -563,3 +563,53 @@
 - 回答完成状态没有稳定信号，S1 整体尚未通过。
 - 浏览器版本、页面语言和视口类别仍未报告。
 - 尚未创建脱敏 DOM fixture，S2/S3 尚未运行。
+
+---
+
+## 2026-09-06｜阶段：T0-01 回答完成状态候选改进
+
+### 修改目的
+
+修复探针 `0.1.0` 只能识别流式候选、无法为已完成 Assistant 回答提供正向证据的问题，同时保持缺失或冲突信号时的安全降级。
+
+### 实际变更
+
+1. 核对 OpenAI 官方 ChatGPT 文档，确认产品层存在“等待响应完成”的行为边界，但官方资料没有公开 ChatGPT Web DOM 或完成态选择器契约。
+2. 将探针版本升级为 `0.2.0`，报告 schema 升级为 2；旧 schema 1 观察保持不变。
+3. 为 Assistant 消息增加 `stateEvidence`，只输出 `ariaBusyTrue` 和固定完成操作类别，不输出原始属性值。
+4. 使用精确 `copy-turn-action-button` 候选作为完成正向信号；点赞/点踩候选仅用于诊断，不能单独判定完成。
+5. 增加 `completed-signal` 和 `conflicting-signals`；流式与完成候选同时出现时禁止判定完成。
+6. 在 summary 中增加完成和冲突计数，并让流式计数覆盖所有 `ariaBusyTrue` 记录。
+7. 扩充合成测试，覆盖完成正向信号、流式/完成冲突以及只有反馈信号时保持未确认。
+8. 新增完成状态候选说明并更新采集工具、阶段状态、任务卡和 S1 下一步。
+
+### 新增文件
+
+- `docs/stage-0/t0-01-completion-state-signals.md`
+
+### 修改文件
+
+- `tools/stage-0/chatgpt-readonly-probe.js`
+- `tools/stage-0/chatgpt-readonly-probe.test.js`
+- `docs/stage-0/t0-01-readonly-collection-kit.md`
+- `docs/stage-0/README.md`
+- `docs/stage-0/task-cards.md`
+- `docs/stage-0/evidence/T0-01-S1-summary.md`
+- `CHANGELOG.md`
+
+### 验证结果
+
+- 探针回归测试 9/9 通过，新增覆盖完成正向信号、反馈信号不足、流式/完成冲突和用户消息不误判。
+- 探针 SHA-256 复核一致：`5B4B890B5DC384A14F3652DDADF951576A86C3BB3AE520C2A7D67CB5D966E1DB`。
+- QSR 确认 schema 2 的 `stateEvidence` 只输出布尔值和三个固定类别，不含正文或属性原值；公开 API 和外部 I/O/页面交互边界未扩大。
+- QSR 确认 `copy-action` 是唯一完成正向候选，反馈信号不能单独判定完成，流式与完成冲突时安全降级。
+- R01/R02/R03 的 schema 1 证据 diff 为 0，旧观察未被追溯改写。
+- 常见敏感模式扫描未发现真实敏感数据；测试内的合成路径和诱饵 URL 属于预期测试值。
+- Markdown 本地链接检查为 0 个缺失，Git diff 格式检查通过。
+- QSR 独立复核结论为 PASS；该结论只关闭技术审查门禁，不自动授权真实页面运行。
+
+### 遗留事项
+
+- `0.2.0` 已通过 QSR 技术复核，但首次真实页面运行仍需 PO/用户明确授权。
+- 完成操作选择器只是低置信度实测候选，不是 OpenAI 官方契约。
+- S1 需要使用放行后的 `0.2.0` 重新观察；S2/S3 尚未运行。

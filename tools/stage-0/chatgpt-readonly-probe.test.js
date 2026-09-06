@@ -84,6 +84,7 @@ test("blocks non-ChatGPT hosts before inspecting the document", () => {
   const { report } = runProbe(documentRef, conversationLocation({ hostname: "example.com" }));
 
   assert.equal(report.status, "blocked");
+  assert.equal(report.schemaVersion, "2");
   assert.equal(report.errorCodes[0], "HOST_NOT_ALLOWED");
   assert.equal(inspected, false);
 });
@@ -130,17 +131,21 @@ test("emits a strict structural summary without raw content or attribute values"
   const serialized = JSON.stringify(report);
 
   assert.deepEqual(Object.keys(probe), ["version", "run", "dispose"]);
+  assert.equal(probe.version, "0.2.0");
+  assert.equal(report.schemaVersion, "2");
   assert.deepEqual(Object.keys(report), [
     "schemaVersion", "probeVersion", "capturedAt", "status", "errorCodes",
     "page", "summary", "messages", "limitations",
   ]);
   assert.deepEqual(Object.keys(report.messages[0]), [
-    "ordinal", "role", "textLengthBucket", "answerStateHint", "structure", "attributePresence",
+    "ordinal", "role", "textLengthBucket", "answerStateHint", "stateEvidence", "structure", "attributePresence",
   ]);
   assert.equal(report.status, "observed");
   assert.equal(report.page.pathKind, "conversation");
   assert.equal(report.messages[0].role, "assistant");
   assert.equal(report.messages[0].answerStateHint, "streaming-signal");
+  assert.equal(report.messages[0].stateEvidence.ariaBusyTrue, true);
+  assert.deepEqual(report.messages[0].stateEvidence.completionActionKinds, []);
   assert.equal(report.messages[0].structure.paragraphs, 2);
   assert.equal(report.messages[0].structure.codeBlocks, 1);
   assert.equal(report.messages[0].attributePresence.dataMessageId, true);
@@ -151,6 +156,63 @@ test("emits a strict structural summary without raw content or attribute values"
   ]) {
     assert.equal(serialized.includes(lure), false, `leaked lure: ${lure}`);
   }
+});
+
+test("requires a positive copy action for completion and blocks signal conflicts", () => {
+  const copySelector = '[data-testid="copy-turn-action-button"]';
+  const feedbackSelector = '[data-testid="good-response-turn-action-button"]';
+  const completeTurn = new FakeNode({
+    textContent: "synthetic completed response",
+    counts: { [copySelector]: 1, [feedbackSelector]: 1 },
+  });
+  const completeRole = new FakeNode({
+    attributes: { "data-message-author-role": "assistant" },
+    closestNode: completeTurn,
+  });
+  const complete = runProbe(createDocument([{ node: completeTurn, roleNode: completeRole }])).report;
+
+  const conflictTurn = new FakeNode({
+    textContent: "synthetic conflicting response",
+    attributes: { "aria-busy": "true" },
+    counts: { [copySelector]: 1 },
+  });
+  const conflictRole = new FakeNode({
+    attributes: { "data-message-author-role": "assistant" },
+    closestNode: conflictTurn,
+  });
+  const conflict = runProbe(createDocument([{ node: conflictTurn, roleNode: conflictRole }])).report;
+
+  const feedbackOnlyTurn = new FakeNode({
+    textContent: "synthetic feedback-only response",
+    counts: { [feedbackSelector]: 1 },
+  });
+  const feedbackOnlyRole = new FakeNode({
+    attributes: { "data-message-author-role": "assistant" },
+    closestNode: feedbackOnlyTurn,
+  });
+  const feedbackOnly = runProbe(createDocument([{ node: feedbackOnlyTurn, roleNode: feedbackOnlyRole }])).report;
+
+  const userTurn = new FakeNode({
+    textContent: "synthetic user message",
+    counts: { [copySelector]: 1 },
+  });
+  const userRole = new FakeNode({
+    attributes: { "data-message-author-role": "user" },
+    closestNode: userTurn,
+  });
+  const user = runProbe(createDocument([{ node: userTurn, roleNode: userRole }])).report;
+
+  assert.equal(complete.messages[0].answerStateHint, "completed-signal");
+  assert.deepEqual(complete.messages[0].stateEvidence.completionActionKinds, [
+    "copy-action", "positive-feedback-action",
+  ]);
+  assert.equal(complete.summary.completedSignalCount, 1);
+  assert.equal(conflict.messages[0].answerStateHint, "conflicting-signals");
+  assert.equal(conflict.summary.streamingSignalCount, 1);
+  assert.equal(conflict.summary.conflictingSignalCount, 1);
+  assert.equal(feedbackOnly.messages[0].answerStateHint, "unconfirmed");
+  assert.equal(user.messages[0].answerStateHint, "unconfirmed");
+  assert.deepEqual(user.messages[0].stateEvidence.completionActionKinds, []);
 });
 
 test("deduplicates only same-role candidates for the same turn", () => {

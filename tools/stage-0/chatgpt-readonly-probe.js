@@ -8,7 +8,8 @@
 (function installReadonlyProbe(globalScope) {
   "use strict";
 
-  const PROBE_VERSION = "0.1.0";
+  const PROBE_VERSION = "0.2.0";
+  const SCHEMA_VERSION = "2";
   const ALLOWED_HOSTS = new Set(["chatgpt.com", "www.chatgpt.com"]);
   const MAX_MESSAGE_CANDIDATES = 500;
   const ROLE_SELECTOR = '[data-message-author-role="user"], [data-message-author-role="assistant"]';
@@ -24,6 +25,11 @@
     blockquotes: "blockquote",
     links: "a",
     images: "img",
+  });
+  const COMPLETION_SIGNAL_SELECTORS = Object.freeze({
+    "copy-action": '[data-testid="copy-turn-action-button"]',
+    "positive-feedback-action": '[data-testid="good-response-turn-action-button"]',
+    "negative-feedback-action": '[data-testid="bad-response-turn-action-button"]',
   });
 
   function textLengthBucket(length) {
@@ -59,14 +65,36 @@
       structure[name] = safeCount(node, selector);
     }
 
-    const ariaBusy = getAttribute(node, "aria-busy") === "true"
-      || getAttribute(roleNode, "aria-busy") === "true";
+    const ariaBusy = role === "assistant" && (
+      getAttribute(node, "aria-busy") === "true"
+      || getAttribute(roleNode, "aria-busy") === "true"
+      || safeCount(node, '[aria-busy="true"]') > 0
+    );
+    const completionActionKinds = role === "assistant"
+      ? Object.entries(COMPLETION_SIGNAL_SELECTORS)
+        .filter(([, selector]) => safeCount(node, selector) > 0)
+        .map(([kind]) => kind)
+      : [];
+    const completionSignal = completionActionKinds.includes("copy-action");
+    let answerStateHint = "unconfirmed";
+
+    if (role === "assistant" && ariaBusy && completionSignal) {
+      answerStateHint = "conflicting-signals";
+    } else if (role === "assistant" && ariaBusy) {
+      answerStateHint = "streaming-signal";
+    } else if (role === "assistant" && completionSignal) {
+      answerStateHint = "completed-signal";
+    }
 
     return Object.freeze({
       ordinal: index + 1,
       role,
       textLengthBucket: textLengthBucket(rawTextLength),
-      answerStateHint: role === "assistant" && ariaBusy ? "streaming-signal" : "unconfirmed",
+      answerStateHint,
+      stateEvidence: Object.freeze({
+        ariaBusyTrue: ariaBusy,
+        completionActionKinds: Object.freeze(completionActionKinds),
+      }),
       structure: Object.freeze(structure),
       attributePresence: Object.freeze({
         dataMessageId: hasAttribute(node, "data-message-id") || hasAttribute(roleNode, "data-message-id"),
@@ -135,7 +163,7 @@
 
     if (protocol !== "https:") {
       return Object.freeze({
-        schemaVersion: "1",
+        schemaVersion: SCHEMA_VERSION,
         probeVersion: PROBE_VERSION,
         capturedAt,
         status: "blocked",
@@ -147,7 +175,7 @@
 
     if (!hostAllowed) {
       return Object.freeze({
-        schemaVersion: "1",
+        schemaVersion: SCHEMA_VERSION,
         probeVersion: PROBE_VERSION,
         capturedAt,
         status: "blocked",
@@ -159,7 +187,7 @@
 
     if (pathKind !== "conversation") {
       return Object.freeze({
-        schemaVersion: "1",
+        schemaVersion: SCHEMA_VERSION,
         probeVersion: PROBE_VERSION,
         capturedAt,
         status: "blocked",
@@ -175,7 +203,7 @@
 
     if (mainRegions.length === 0) {
       return Object.freeze({
-        schemaVersion: "1",
+        schemaVersion: SCHEMA_VERSION,
         probeVersion: PROBE_VERSION,
         capturedAt,
         status: "blocked",
@@ -191,7 +219,7 @@
 
     if (mainRegions.length !== 1) {
       return Object.freeze({
-        schemaVersion: "1",
+        schemaVersion: SCHEMA_VERSION,
         probeVersion: PROBE_VERSION,
         capturedAt,
         status: "blocked",
@@ -204,7 +232,7 @@
     const scan = findMessageEntries(mainRegions[0]);
     if (scan.errorCode) {
       return Object.freeze({
-        schemaVersion: "1",
+        schemaVersion: SCHEMA_VERSION,
         probeVersion: PROBE_VERSION,
         capturedAt,
         status: "blocked",
@@ -219,7 +247,7 @@
       summarizeMessageNode(entry.node, entry.roleNode, index));
 
     return Object.freeze({
-      schemaVersion: "1",
+      schemaVersion: SCHEMA_VERSION,
       probeVersion: PROBE_VERSION,
       capturedAt,
       status: messages.length > 0 ? "observed" : "blocked",
@@ -234,12 +262,15 @@
         messageCount: messages.length,
         userCount: messages.filter((message) => message.role === "user").length,
         assistantCount: messages.filter((message) => message.role === "assistant").length,
-        streamingSignalCount: messages.filter((message) => message.answerStateHint === "streaming-signal").length,
+        streamingSignalCount: messages.filter((message) => message.stateEvidence.ariaBusyTrue).length,
+        completedSignalCount: messages.filter((message) => message.answerStateHint === "completed-signal").length,
+        conflictingSignalCount: messages.filter((message) => message.answerStateHint === "conflicting-signals").length,
       }),
       messages: Object.freeze(messages),
       limitations: Object.freeze([
         "Selector behavior is probe evidence, not a stability guarantee.",
         "Answer completion remains unconfirmed without an explicit stable signal.",
+        "Completion action selectors are empirical candidates, not an official or permanent contract.",
         "No raw text, source identifiers, attribute values, URLs, or DOM fragments are included.",
       ]),
     });
