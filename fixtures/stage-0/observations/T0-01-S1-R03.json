@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "1",
+  "probeVersion": "0.1.0",
+  "capturedAt": "2026-09-06T14:32:11.433Z",
+  "status": "observed",
+  "errorCodes": [],
+  "page": { "surface": "chatgpt-web", "hostAllowed": true, "pathKind": "conversation", "mainRegionFound": true },
+  "summary": { "messageCount": 6, "userCount": 3, "assistantCount": 3, "streamingSignalCount": 0 },
+  "messages": [
+    {
+      "ordinal": 1,
+      "role": "user",
+      "textLengthBucket": "41-200",
+      "answerStateHint": "unconfirmed",
+      "structure": { "headings": 1, "paragraphs": 0, "unorderedLists": 0, "orderedLists": 0, "listItems": 0, "codeBlocks": 0, "inlineCode": 0, "tables": 0, "blockquotes": 0, "links": 0, "images": 0 },
+      "attributePresence": { "dataMessageId": true, "dataTestId": true, "dataMessageAuthorRole": true, "ariaBusy": false, "ariaLabel": false }
+    },
+    {
+      "ordinal": 2,
+      "role": "assistant",
+      "textLengthBucket": "41-200",
+      "answerStateHint": "unconfirmed",
+      "structure": { "headings": 1, "paragraphs": 3, "unorderedLists": 1, "orderedLists": 0, "listItems": 3, "codeBlocks": 0, "inlineCode": 0, "tables": 0, "blockquotes": 0, "links": 0, "images": 0 },
+      "attributePresence": { "dataMessageId": true, "dataTestId": true, "dataMessageAuthorRole": true, "ariaBusy": false, "ariaLabel": false }
+    },
+    {
+      "ordinal": 3,
+      "role": "user",
+      "textLengthBucket": "1-40",
+      "answerStateHint": "unconfirmed",
+      "structure": { "headings": 1, "paragraphs": 0, "unorderedLists": 0, "orderedLists": 0, "listItems": 0, "codeBlocks": 0, "inlineCode": 0, "tables": 0, "blockquotes": 0, "links": 0, "images": 0 },
+      "attributePresence": { "dataMessageId": true, "dataTestId": true, "dataMessageAuthorRole": true, "ariaBusy": false, "ariaLabel": false }
+    },
+    {
+      "ordinal": 4,
+      "role": "assistant",
+      "textLengthBucket": "41-200",
+      "answerStateHint": "unconfirmed",
+      "structure": { "headings": 1, "paragraphs": 0, "unorderedLists": 0, "orderedLists": 0, "listItems": 0, "codeBlocks": 0, "inlineCode": 0, "tables": 1, "blockquotes": 0, "links": 0, "images": 0 },
+      "attributePresence": { "dataMessageId": true, "dataTestId": true, "dataMessageAuthorRole": true, "ariaBusy": false, "ariaLabel": false }
+    },
+    {
+      "ordinal": 5,
+      "role": "user",
+      "textLengthBucket": "1-40",
+      "answerStateHint": "unconfirmed",
+      "structure": { "headings": 1, "paragraphs": 0, "unorderedLists": 0, "orderedLists": 0, "listItems": 0, "codeBlocks": 0, "inlineCode": 0, "tables": 0, "blockquotes": 0, "links": 0, "images": 0 },
+      "attributePresence": { "dataMessageId": true, "dataTestId": true, "dataMessageAuthorRole": true, "ariaBusy": false, "ariaLabel": false }
+    },
+    {
+      "ordinal": 6,
+      "role": "assistant",
+      "textLengthBucket": "41-200",
+      "answerStateHint": "unconfirmed",
+      "structure": { "headings": 1, "paragraphs": 2, "unorderedLists": 0, "orderedLists": 0, "listItems": 0, "codeBlocks": 0, "inlineCode": 0, "tables": 0, "blockquotes": 0, "links": 0, "images": 0 },
+      "attributePresence": { "dataMessageId": true, "dataTestId": true, "dataMessageAuthorRole": true, "ariaBusy": false, "ariaLabel": false }
+    }
+  ],
+  "limitations": [
+    "Selector behavior is probe evidence, not a stability guarantee.",
+    "Answer completion remains unconfirmed without an explicit stable signal.",
+    "No raw text, source identifiers, attribute values, URLs, or DOM fragments are included."
+  ]
+}

@@ -1,0 +1,55 @@
+evidenceId: T0-01-S1-R03
+taskId: T0-01
+sampleId: S1
+sourceType: read-only-observation
+capturedAt: 2026-09-06T14:32:11.433Z
+environment:
+  surface: chatgpt-web
+  browser: unreported
+  locale: unreported
+  viewportClass: unreported
+authorization:
+  approvalRef: D0-03
+  mode: read-only
+procedure:
+  preconditions:
+    - same dedicated synthetic S1 conversation as R01 and R02 reported by operator
+    - probe version 0.1.0 with QSR-approved SHA-256
+  actions:
+    - operator manually invoked a third read-only run
+    - operator previewed and supplied only the sanitized JSON result
+observation:
+  expectedMessageCount: 6
+  recognizedMessageCount: 6
+  roleCorrectCount: 6
+  orderCorrectCount: 6
+  stateCorrectCount: 0
+  unrecognizedNodeCount: 0
+  locatorAvailableCount: 6
+  selectorStrategyIds:
+    - role-data-attribute
+    - turn-testid-presence
+result:
+  status: fail
+  confidence: medium
+  errorCodes:
+    - ANSWER_STATE_UNCONFIRMED
+artifacts:
+  fixturePath: fixtures/stage-0/observations/T0-01-S1-R03.json
+  sha256: 6A43CE5F8DBA1C43A71BC45B1421D666AC6308B0E59D2EF3FDF4C84E53257AB1
+redaction:
+  rulesVersion: t0-01-probe-schema-1
+  automatedScan: pass
+  humanReview: pass
+review:
+  author: TL
+  reviewer: QSR
+  limitations:
+    - This is the third of three required independent S1 observations.
+    - Browser version, locale, and viewport class remain unreported.
+    - After removing capturedAt, the complete JSON value tree matches R01 and R02; normalized payload SHA-256 is 3C9C2AB4104A79F9A70138AA504A31A3C5ED61A6EF16FF0206B9335790DBF82D.
+    - Candidate source attributes are present for all messages, but their values and lifecycle stability remain unverified.
+    - The three assistant messages have no streaming signal, but absence of that signal does not prove completion.
+    - The observation contains structure summaries only and is not a sanitized DOM fixture.
+    - HTML space entities in the user's pasted formatting were normalized to ordinary JSON whitespace without changing values.
+    - QSR could not independently view the user's original pasted text; character-level fidelity and HTML-space normalization rely on the TL confirmation that no semantic values were changed.
