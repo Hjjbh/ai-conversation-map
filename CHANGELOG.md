@@ -650,3 +650,53 @@
 - `0.2.0` 尚未在 S1 页面实际运行，不能提前判定完成候选有效。
 - 首次结果需人工预览、敏感扫描和 QSR 复核后才能形成证据。
 - S2/S3 仍未取得运行授权。
+
+---
+
+## 2026-09-06｜阶段：探针 0.2.0 首次 S1 回测
+
+### 修改目的
+
+登记获批的 `0.2.0` 单次 S1 只读回测，验证复制操作候选能否为已完成 Assistant 回答提供正向状态证据。
+
+### 实际变更
+
+1. 接收用户提供的 schema 2 脱敏 JSON；HTML 空格实体仅规范化为普通 JSON 空白，不改变数据值。
+2. 将结果登记为 `T0-01-S1-V02-R01`，保留消息计数、角色、顺序、结构和固定类别状态证据。
+3. 验证 3/3 Assistant 均为 `completed-signal`，只包含 `copy-action` 候选，且 `ariaBusyTrue` 均为 false。
+4. 验证 summary 中完成、流式和冲突计数分别为 3、0、0；用户消息仍按设计保持 `unconfirmed`。
+5. 将本次结果判定为当前 S1 已完成页面状态的单次通过证据，置信度保持 low；不把选择器视为稳定平台契约。
+6. 更新 S1 小结、阶段状态、任务卡、探针计划、状态候选说明和采集工具状态。
+7. 标记本次一次运行授权已经用尽；不自动追加运行或扩大到 S2/S3。
+
+### 新增文件
+
+- `fixtures/stage-0/observations/T0-01-S1-V02-R01.json`
+- `docs/stage-0/evidence/T0-01-S1-V02-R01.yaml`
+
+### 修改文件
+
+- `docs/stage-0/README.md`
+- `docs/stage-0/task-cards.md`
+- `docs/stage-0/01-chatgpt-probe-plan.md`
+- `docs/stage-0/t0-01-completion-state-signals.md`
+- `docs/stage-0/t0-01-readonly-collection-kit.md`
+- `docs/stage-0/evidence/T0-01-S1-summary.md`
+- `CHANGELOG.md`
+
+### 验证结果
+
+- JSON 解析和结构断言通过：schema 2、探针 `0.2.0`、6 条消息、角色严格交替、序号 1–6 连续。
+- 3/3 Assistant 的完成候选、复制操作证据和非忙碌状态断言通过；3/3 用户消息保持未确认。
+- summary 的完成/流式/冲突计数断言通过，分别为 3/0/0。
+- 观察文件 SHA-256 为 `12537DFD808FFA6912D05522241BDE85D4147853EDFA5BFBD43E12F2AB5A7252`。
+- QSR 独立复核结论为 PASS：复算文件 SHA-256 一致，确认 JSON 计数、角色/顺序、状态证据和授权边界正确，且结论未扩大为稳定契约或 T0-01 整体通过。
+- 探针回归测试由 TL 与 QSR 分别实际复跑，均为 9/9 通过；Markdown 本地链接检查为 0 个缺失，Git diff 格式检查通过。
+- 常见令牌、私钥、URL、UUID、正文、真实 ID/属性值和 DOM 等禁止内容扫描未发现命中。
+- QSR 无法查看用户原始粘贴文本，因此逐字符一致性与 HTML 空格规范化继续依赖 TL 的无语义变换录入确认；该限制已写入证据。
+
+### 遗留事项
+
+- 当前只有一次 schema 2 S1 实测，不能证明重复读取、账户差异或页面升级后的稳定性。
+- 尚未创建脱敏 DOM fixture；浏览器版本、语言和视口仍未报告。
+- S2/S3 尚未获运行授权；在 S3 完成前不将候选自动映射为领域层 `complete`。

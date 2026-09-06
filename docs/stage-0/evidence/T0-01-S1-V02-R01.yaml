@@ -1,0 +1,59 @@
+evidenceId: T0-01-S1-V02-R01
+taskId: T0-01
+sampleId: S1
+sourceType: read-only-observation
+capturedAt: 2026-09-06T15:05:22.878Z
+environment:
+  surface: chatgpt-web
+  browser: unreported
+  locale: unreported
+  viewportClass: unreported
+authorization:
+  approvalRef: D0-03-and-explicit-0.2.0-run-approval
+  mode: read-only
+procedure:
+  preconditions:
+    - same dedicated synthetic S1 conversation used for the schema 1 observations, as reported by operator
+    - probe version 0.2.0 with QSR-approved SHA-256 5B4B890B5DC384A14F3652DDADF951576A86C3BB3AE520C2A7D67CB5D966E1DB
+    - one read-only run explicitly approved by PO/operator
+  actions:
+    - operator manually invoked the single approved read-only run
+    - operator previewed and supplied only the sanitized schema 2 JSON result
+observation:
+  expectedMessageCount: 6
+  recognizedMessageCount: 6
+  roleCorrectCount: 6
+  orderCorrectCount: 6
+  stateCorrectCount: 3
+  unrecognizedNodeCount: 0
+  locatorAvailableCount: 6
+  completedSignalCount: 3
+  streamingSignalCount: 0
+  conflictingSignalCount: 0
+  selectorStrategyIds:
+    - role-data-attribute
+    - turn-testid-presence
+    - copy-action-completion-candidate
+result:
+  status: pass
+  confidence: low
+  errorCodes: []
+artifacts:
+  fixturePath: fixtures/stage-0/observations/T0-01-S1-V02-R01.json
+  sha256: 12537DFD808FFA6912D05522241BDE85D4147853EDFA5BFBD43E12F2AB5A7252
+redaction:
+  rulesVersion: t0-01-probe-schema-2
+  automatedScan: pass
+  humanReview: pass
+review:
+  author: TL
+  reviewer: QSR
+  limitations:
+    - This is one authorized schema 2 observation, so it validates the candidate only for this completed S1 page state and does not establish cross-run or cross-version selector stability.
+    - Browser version, locale, and viewport class remain unreported.
+    - The three assistant messages expose copy-action candidates without ariaBusyTrue or conflicting signals; this is empirical evidence, not an official ChatGPT Web contract.
+    - User messages remain unconfirmed by design and are excluded from answer-state accuracy.
+    - The observation contains structure summaries only and is not a sanitized DOM fixture.
+    - HTML space entities in the user's pasted formatting were normalized to ordinary JSON whitespace without changing values.
+    - QSR cannot independently view the user's original pasted text; character-level fidelity and HTML-space normalization rely on the TL confirmation that no semantic values were changed.
+    - QSR independently verified the stored JSON parsing, SHA-256, internal counts, role/order, state evidence, prohibited-field scan, regression tests, local links, and diff formatting.
