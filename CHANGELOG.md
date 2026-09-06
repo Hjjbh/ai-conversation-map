@@ -236,6 +236,9 @@
 4. 从 GitHub 官方发布包临时准备便携版 GitHub CLI；工具位于被忽略的 `.tools/`，不会进入版本库。
 5. 完成 GitHub 网页授权，确认当前账号为 `Hjjbh`。
 6. 检查 `Hjjbh/ai-conversation-map`，确认创建前不存在同名仓库，不会覆盖已有远端内容。
+7. 经 PO 明确确认账号归属和数据上传授权后，创建 GitHub 私有仓库 `Hjjbh/ai-conversation-map`。
+8. 将远端 `origin` 设置为 `https://github.com/Hjjbh/ai-conversation-map.git`。
+9. 创建首次提交并把本地 `main` 推送到 `origin/main`，建立上游跟踪关系。
 
 ### 涉及文件
 
@@ -247,7 +250,10 @@
 - Git 仓库已初始化，分支为 `main`。
 - GitHub 身份授权成功，令牌未写入项目文件或修改日志。
 - `.tools/` 已被 `.gitignore` 排除。
+- 首次提交 `4271a83` 已成功推送。
+- GitHub 仓库可访问且可见性为 `PRIVATE`。
+- 本地 `main` 已跟踪 `origin/main`。
 
 ### 遗留事项
 
-- 创建 GitHub 私有仓库、完成首次提交和推送后，追加远端地址与提交验证结果。
+- 便携版 GitHub CLI 保留在被忽略的 `.tools/` 中，仅供本地仓库管理使用；不进入版本库。
