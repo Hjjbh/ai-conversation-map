@@ -24,7 +24,7 @@
 
 | 编号 | 工作包 | 主责 | 复核 | 当前状态 |
 |---|---|---|---|---|
-| T0-01 | ChatGPT 页面与消息结构盘点 | ADP | QSR | 只读探针获批，等待专用测试输入 |
+| T0-01 | ChatGPT 页面与消息结构盘点 | ADP | QSR | S1/S2/S3 脚本就绪，等待形成真实测试会话 |
 | T0-02 | 会话/消息稳定身份验证 | ADP | GDE + QSR | 契约就绪，待样本验证 |
 | T0-03 | 双向定位技术验证 | ADP + UIE | QSR | 协议就绪，待环境验证 |
 | T0-04 | 真实分支路径验证 | ADP | TL + QSR | 初步报告完成，能力未确认 |
@@ -50,6 +50,7 @@
 - `03-navigation-protocol.md`：跨入口通信和双向定位协议草案。
 - `04-branch-capability-preliminary.md`：分支公开能力与技术验证计划。
 - `05-privacy-permissions-boundary.md`：权限、隐私、脱敏与熔断边界。
+- `test-sessions/`：S1、S2、S3 合成测试会话脚本；不等同于真实页面 fixture。
 - `06-stage-conclusion.md`：阶段结论；仅在证据齐全后创建。
 
 ## 退出标准
