@@ -24,7 +24,7 @@
 
 | 编号 | 工作包 | 主责 | 复核 | 当前状态 |
 |---|---|---|---|---|
-| T0-01 | ChatGPT 页面与消息结构盘点 | ADP | QSR | S1 的 `0.2.0` 单次回测识别 3/3 完成候选且无冲突，QSR 复核通过；S2/S3 未运行 |
+| T0-01 | ChatGPT 页面与消息结构盘点 | ADP | QSR | S1 的 `0.2.0` 单次回测已通过 QSR 复核；D0-06 两次重复复测授权包待 PO 批准；S2/S3 未运行 |
 | T0-02 | 会话/消息稳定身份验证 | ADP | GDE + QSR | 契约就绪，待样本验证 |
 | T0-03 | 双向定位技术验证 | ADP + UIE | QSR | 协议就绪，待环境验证 |
 | T0-04 | 真实分支路径验证 | ADP | TL + QSR | 初步报告完成，能力未确认 |
@@ -52,6 +52,7 @@
 - `05-privacy-permissions-boundary.md`：权限、隐私、脱敏与熔断边界。
 - `t0-01-readonly-collection-kit.md`：T0-01 隔离只读采集工具的安全边界与操作说明。
 - `t0-01-completion-state-signals.md`：回答完成正向候选、冲突降级和 schema 2 规则。
+- `t0-01-s1-v02-repeat-authorization.md`：D0-06 两次分步只读重复复测的范围、熔断和 PO 决策区。
 - `test-sessions/`：S1、S2、S3 合成测试会话脚本；不等同于真实页面 fixture。
 - `evidence/`：阶段 0 脱敏观察与复核记录。
 - `06-stage-conclusion.md`：阶段结论；仅在证据齐全后创建。
