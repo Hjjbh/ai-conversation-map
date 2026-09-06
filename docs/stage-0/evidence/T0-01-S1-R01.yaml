@@ -1,0 +1,54 @@
+evidenceId: T0-01-S1-R01
+taskId: T0-01
+sampleId: S1
+sourceType: read-only-observation
+capturedAt: 2026-09-06T14:14:27.638Z
+environment:
+  surface: chatgpt-web
+  browser: unreported
+  locale: unreported
+  viewportClass: unreported
+authorization:
+  approvalRef: D0-03
+  mode: read-only
+procedure:
+  preconditions:
+    - dedicated synthetic S1 conversation reported by operator
+    - probe version 0.1.0 with QSR-approved SHA-256
+  actions:
+    - operator manually loaded the approved probe
+    - operator manually invoked one read-only run
+    - operator previewed and supplied only the sanitized JSON result
+observation:
+  expectedMessageCount: 6
+  recognizedMessageCount: 6
+  roleCorrectCount: 6
+  orderCorrectCount: 6
+  stateCorrectCount: 0
+  unrecognizedNodeCount: 0
+  locatorAvailableCount: 6
+  selectorStrategyIds:
+    - role-data-attribute
+    - turn-testid-presence
+result:
+  status: fail
+  confidence: medium
+  errorCodes:
+    - ANSWER_STATE_UNCONFIRMED
+artifacts:
+  fixturePath: fixtures/stage-0/observations/T0-01-S1-R01.json
+  sha256: 4CF42B218EF63021E2E6E33F0D973F1FEC17E1B3613AF35D11AB8504E453E547
+redaction:
+  rulesVersion: t0-01-probe-schema-1
+  automatedScan: pass
+  humanReview: pass
+review:
+  author: TL
+  reviewer: QSR
+  limitations:
+    - This is the first of three required independent S1 observations.
+    - The operator did not report browser version, locale, or viewport class.
+    - All six messages expose candidate data-message-id and data-testid presence, but no values were persisted and lifecycle stability remains unverified.
+    - The three assistant messages have no streaming signal, but absence of that signal does not prove completion.
+    - The observation contains structure summaries only and is not a sanitized DOM fixture.
+    - QSR could not independently view the user's original pasted text; field-level fidelity relies on the TL confirmation that only outer quoting and escape formatting were removed without semantic changes.
