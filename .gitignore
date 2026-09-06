@@ -1,0 +1,27 @@
+# Dependencies and build output
+node_modules/
+.output/
+.wxt/
+dist/
+coverage/
+
+# Local tooling and caches
+.tools/
+.cache/
+*.log
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local test artifacts containing transient data
+artifacts/
+test-results/
+playwright-report/
