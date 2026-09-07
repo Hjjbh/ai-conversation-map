@@ -1,0 +1,63 @@
+evidenceId: T0-01-S1-POSTREFRESH-R01
+taskId: T0-01
+sampleId: S1
+sourceType: read-only-observation
+capturedAt: 2026-09-07T15:48:01.497Z
+environment:
+  surface: chatgpt-web
+  browser: unreported
+  locale: unreported
+  viewportClass: unreported
+authorization:
+  approvalRef: D0-07
+  mode: read-only
+procedure:
+  preconditions:
+    - original dedicated synthetic S1 conversation after the operator-reported page refresh
+    - probe version 0.2.0 with QSR-approved SHA-256 5B4B890B5DC384A14F3652DDADF951576A86C3BB3AE520C2A7D67CB5D966E1DB
+    - one prospective post-refresh read-only run explicitly approved by PO
+  actions:
+    - operator manually invoked the single approved post-refresh run
+    - operator supplied the sanitized schema 2 JSON result twice; both attachments were byte-identical and count as one run
+observation:
+  expectedMessageCount: 6
+  recognizedMessageCount: 6
+  roleCorrectCount: 6
+  orderCorrectCount: 6
+  stateCorrectCount: 3
+  unrecognizedNodeCount: 0
+  locatorAvailableCount: 6
+  completedSignalCount: 3
+  streamingSignalCount: 0
+  conflictingSignalCount: 0
+  normalizedEqualToV02R01: true
+  selectorStrategyIds:
+    - role-data-attribute
+    - turn-testid-presence
+    - copy-action-completion-candidate
+result:
+  status: pass
+  confidence: low
+  errorCodes: []
+artifacts:
+  fixturePath: fixtures/stage-0/observations/T0-01-S1-POSTREFRESH-R01.json
+  sha256: BA8E53B0EB70EDB1952A1DD624CE61AA83A23910CEF325BB7470C808B7FE2C55
+  sha256Scope: repository-canonical-lf-bytes
+  normalizedPayloadSha256: 7A8843E0682D95C8C3AFF1088C0FDE322C369F50CD33C9E26B821BE5E709BFE3
+redaction:
+  rulesVersion: t0-01-probe-schema-2
+  automatedScan: pass
+  humanReview: pass
+review:
+  author: TL
+  reviewer: QSR
+  limitations:
+    - This is one prospective observation after an operator-reported page refresh, not a repeated read in the original V02-R01 DOM lifecycle.
+    - After removing capturedAt, the complete sanitized JSON value tree matches V02-R01.
+    - The result supports structural and completion-candidate re-detection only; no source ID values, locator values, or DOM identity were retained, so T0-02 cross-refresh identity stability remains unverified.
+    - Browser version, locale, viewport class, and exact refresh mechanics remain unreported.
+    - The two supplied attachments are byte-identical copies of the same capturedAt result and are counted once.
+    - The earlier output produced after D0-06 expired remains excluded and was not persisted.
+    - The observation contains structure summaries only and is not a sanitized DOM fixture.
+    - QSR independently verified attachment byte identity, HTML-space-only parsing normalization, stored semantic equality, artifact SHA-256, normalized comparison with V02-R01, strict schema assertions, prohibited-content scan, regression tests, links, and diff formatting.
+    - The artifact SHA-256 identifies repository-canonical LF bytes; Windows checkout EOL conversion may change a working-tree byte hash, while the normalized semantic hash remains stable.

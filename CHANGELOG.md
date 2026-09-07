@@ -906,3 +906,53 @@
 
 - 当前只有一次 `POSTREFRESH-R01` 额度；运行或任一熔断条件触发后立即失效。
 - 本授权不验证真实来源身份，也不授权 S2/S3 或页面状态变更。
+
+---
+
+## 2026-09-08｜阶段：D0-07 刷新后 S1 观察登记
+
+### 修改目的
+
+登记 D0-07 批准后产生的唯一刷新后 S1 只读观察，验证探针能否在新的页面生命周期中重新识别相同脱敏结构和完成候选。
+
+### 实际变更
+
+1. 接收两份附件并确认其逐字相同、文件 SHA-256 相同、`capturedAt` 相同，因此只计为一次运行。
+2. 将结果登记为 `T0-01-S1-POSTREFRESH-R01`，不复用已熔断的 D0-06 R02/R03 编号。
+3. 验证 schema 2、探针 `0.2.0`、6 条消息、角色严格交替和连续序号。
+4. 验证 3/3 Assistant 为 `completed-signal` 且只有 `copy-action`，完成/流式/冲突计数为 3/0/0。
+5. 删除 `capturedAt` 后与刷新前 V02-R01 比较，完整脱敏 JSON 值树一致。
+6. 保持结论为刷新后的结构和完成候选重新识别，不推导真实来源 ID、定位句柄或消息身份稳定。
+7. 将 D0-07 一次额度标记为用尽，并更新阶段状态、任务卡、采集说明、完成候选说明和 S1 小结。
+
+### 新增文件
+
+- `fixtures/stage-0/observations/T0-01-S1-POSTREFRESH-R01.json`
+- `docs/stage-0/evidence/T0-01-S1-POSTREFRESH-R01.yaml`
+
+### 修改文件
+
+- `docs/stage-0/t0-01-s1-post-refresh-authorization.md`
+- `docs/stage-0/README.md`
+- `docs/stage-0/task-cards.md`
+- `docs/stage-0/t0-01-completion-state-signals.md`
+- `docs/stage-0/t0-01-readonly-collection-kit.md`
+- `docs/stage-0/evidence/T0-01-S1-summary.md`
+- `CHANGELOG.md`
+
+### 验证结果
+
+- 观察 JSON 的 schema、版本、消息计数、角色/顺序、状态证据和 summary 断言全部通过。
+- 保存文件 SHA-256 为 `BA8E53B0EB70EDB1952A1DD624CE61AA83A23910CEF325BB7470C808B7FE2C55`。
+- 删除 `capturedAt` 后，POSTREFRESH-R01 与 V02-R01 完整值树一致，规范化 SHA-256 均为 `7A8843E0682D95C8C3AFF1088C0FDE322C369F50CD33C9E26B821BE5E709BFE3`。
+- 两份附件逐字节相同，SHA-256 均为 `0B3AC59D3DB3F99EAFEE7BDD0F8B676FB174865E910ACE3F6FFA042A599CF204`，确认是同一次运行的重复转交。
+- QSR 独立证据复核结论为 PASS，确认附件一致性、HTML 空格规范化、保存值树、计数/状态、哈希、有限结论和授权用尽状态正确。
+- 探针回归测试 9/9 通过；Markdown 本地链接检查为 0 个缺失，禁止内容扫描为 0 命中，Git diff 格式检查通过。
+- 文件 SHA-256 标记为仓库规范 LF 字节哈希；Windows 工作区行尾转换可能改变原始字节哈希，规范化语义哈希不受影响。
+- Git 提交和远端同步由本条对应提交完成后验证。
+
+### 遗留事项
+
+- D0-07 额度已经用尽，不得追加运行。
+- 探针未保留真实来源 ID、定位句柄或 DOM 身份，T0-02 跨刷新身份稳定性仍未验证。
+- S2/S3 和脱敏 DOM fixture 仍未完成。
