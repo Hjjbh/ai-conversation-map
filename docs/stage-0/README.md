@@ -24,7 +24,7 @@
 
 | 编号 | 工作包 | 主责 | 复核 | 当前状态 |
 |---|---|---|---|---|
-| T0-01 | ChatGPT 页面与消息结构盘点 | ADP | QSR | D0-06 因运行前页面已刷新而熔断，R02/R03 均未执行；当前无页面运行授权，S2/S3 未运行 |
+| T0-01 | ChatGPT 页面与消息结构盘点 | ADP | QSR | D0-06 已熔断；D0-07 一次刷新后 S1 前瞻性只读观察已获 QSR PASS，待 PO 审批；S2/S3 未运行 |
 | T0-02 | 会话/消息稳定身份验证 | ADP | GDE + QSR | 契约就绪，待样本验证 |
 | T0-03 | 双向定位技术验证 | ADP + UIE | QSR | 协议就绪，待环境验证 |
 | T0-04 | 真实分支路径验证 | ADP | TL + QSR | 初步报告完成，能力未确认 |
@@ -53,6 +53,7 @@
 - `t0-01-readonly-collection-kit.md`：T0-01 隔离只读采集工具的安全边界与操作说明。
 - `t0-01-completion-state-signals.md`：回答完成正向候选、冲突降级和 schema 2 规则。
 - `t0-01-s1-v02-repeat-authorization.md`：D0-06 两次分步只读重复复测的范围、熔断和 PO 决策区。
+- `t0-01-s1-post-refresh-authorization.md`：D0-07 刷新后单次前瞻性只读观察的范围、证据边界和 PO 决策区。
 - `test-sessions/`：S1、S2、S3 合成测试会话脚本；不等同于真实页面 fixture。
 - `evidence/`：阶段 0 脱敏观察与复核记录。
 - `06-stage-conclusion.md`：阶段结论；仅在证据齐全后创建。
