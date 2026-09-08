@@ -221,7 +221,7 @@ PO approval: D0-08B approved for R01/R02 with the exact binding above
 
 ### 当前状态
 
-**D0-08A 已获 PO 授权并完成本地实现/测试，GDE 与 QSR 实现级复核均 PASS；D0-08B 已按完整绑定获 PO 批准，R01/R02 已授权但尚未运行。**
+**D0-08A 已获 PO 授权并完成本地实现/测试，GDE 与 QSR 实现级复核均 PASS；D0-08B 已按完整绑定获 PO 批准，R01/R02 已完成并通过清理，脱敏证据见 [T0-02-S1-uniqueness-r01-r02.md](evidence/T0-02-S1-uniqueness-r01-r02.md)。**
 
 ### 不在本方案内的后续事项
 

@@ -314,4 +314,4 @@ ADP 在 T0-01 fixture 可用后，应按每类会话样本分别填写：
 
 ## 15. 当前结论
 
-本文完成 T0-02 的文档级输入契约；基于 S1 已归档脱敏观察的第一版能力矩阵见 [T0-02-S1-identity-matrix.md](evidence/T0-02-S1-identity-matrix.md)。针对属性唯一性证据缺口，D0-08A/D0-08B 非暴露摘要方案见 [t0-02-s1-uniqueness-summary-authorization.md](t0-02-s1-uniqueness-summary-authorization.md)。D0-08A 的 0.3.0 本地实现与实现级 GDE/QSR 复核已完成，D0-08B 已按完整绑定获 PO 批准；R01/R02 尚未形成运行证据，不产生稳定来源键或 T0-02 通过结论。在证据完成前，所有平台稳定 ID、回答版本标识、幂等修订和跨刷新定位能力均保持“未确认”。
+本文完成 T0-02 的文档级输入契约；基于 S1 已归档脱敏观察的第一版能力矩阵见 [T0-02-S1-identity-matrix.md](evidence/T0-02-S1-identity-matrix.md)。针对属性唯一性证据缺口，D0-08A/D0-08B 非暴露摘要方案见 [t0-02-s1-uniqueness-summary-authorization.md](t0-02-s1-uniqueness-summary-authorization.md)。D0-08A 的 0.3.0 本地实现与实现级 GDE/QSR 复核已完成，D0-08B 已按完整绑定获 PO 批准，R01/R02 已形成脱敏运行证据；该证据不产生稳定来源键或 T0-02 通过结论。所有平台稳定 ID、回答版本标识、幂等修订和跨刷新定位能力仍保持“未确认”。
