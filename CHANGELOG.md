@@ -992,7 +992,8 @@
 - 身份矩阵明确区分结构事实、候选证据和未知项，未保存或推导真实 ID、URL、正文、DOM 或 locator 值。
 - 文档链接检查通过；敏感模式扫描未发现项目数据命中（既有公开 GitHub 远端地址除外）；`git diff --check` 通过；探针回归测试 9/9 通过。
 - GDE 与 QSR 已完成独立只读复核并 PASS；QSR 要求的定位候选置信度边界已修订为 `unknown/unknown`，结构/完成候选的 `low` 已标明为非身份置信度。
-- 原子提交与远端同步结果将在提交及推送完成后据实补记。
+- 原子提交：本地初始提交 `4659f63`；因 Git HTTPS 两次连接失败，使用 GitHub Git Data API 创建等价远端提交 `efab36f`，并逐项校验父提交、树 SHA 与文档 blob SHA。
+- 功能分支 `docs/t0-02-s1-identity-matrix` 已推送并与上游 `efab36f` 对齐；随后已快进合并到 `main`，`main` 已推送并与 `origin/main` 对齐。
 
 ### 遗留事项
 
