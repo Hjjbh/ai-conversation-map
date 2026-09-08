@@ -24,23 +24,15 @@ function runProbe(document, location = conversationLocation()) {
 }
 
 class FakeNode {
-  constructor({ attributes = {}, textContent = "", counts = {}, closestNode = null } = {}) {
+  constructor({ attributes = {}, closestNode = null, throwAttributes = [] } = {}) {
     this.attributes = attributes;
-    this.textContent = textContent;
-    this.counts = counts;
     this.closestNode = closestNode;
+    this.throwAttributes = new Set(throwAttributes);
   }
 
   getAttribute(name) {
+    if (this.throwAttributes.has(name)) throw new Error("synthetic attribute read failure");
     return Object.prototype.hasOwnProperty.call(this.attributes, name) ? this.attributes[name] : null;
-  }
-
-  hasAttribute(name) {
-    return Object.prototype.hasOwnProperty.call(this.attributes, name);
-  }
-
-  querySelectorAll(selector) {
-    return Array.from({ length: this.counts[selector] || 0 });
   }
 
   closest() {
@@ -60,7 +52,6 @@ function createDocument(entries = [], options = {}) {
   const mainRegions = Array.from({ length: options.mainCount ?? 1 }, () => main);
 
   return {
-    accountLure: options.accountLure,
     querySelectorAll(selector) {
       return selector === "main" ? mainRegions : [];
     },
@@ -72,173 +63,161 @@ function conversationLocation(overrides = {}) {
     protocol: "https:",
     hostname: "chatgpt.com",
     pathname: "/c/synthetic-conversation",
-    search: "?account=account-query-lure",
-    href: "https://chatgpt.com/c/synthetic-conversation?account=account-query-lure",
     ...overrides,
   };
 }
 
-test("blocks non-ChatGPT hosts before inspecting the document", () => {
-  let inspected = false;
-  const documentRef = { querySelectorAll() { inspected = true; return []; } };
-  const { report } = runProbe(documentRef, conversationLocation({ hostname: "example.com" }));
+function messageEntry({ role, messageId, testId, nodeMessageId, nodeTestId, throwNodeAttributes = [], throwRoleAttributes = [] }) {
+  const node = new FakeNode({
+    attributes: {
+      ...(nodeMessageId === undefined && messageId !== undefined ? { "data-message-id": messageId } : {}),
+      ...(nodeTestId === undefined && testId !== undefined ? { "data-testid": testId } : {}),
+      ...(nodeMessageId !== undefined ? { "data-message-id": nodeMessageId } : {}),
+      ...(nodeTestId !== undefined ? { "data-testid": nodeTestId } : {}),
+    },
+    throwAttributes: throwNodeAttributes,
+  });
+  const roleNode = new FakeNode({
+    attributes: {
+      "data-message-author-role": role,
+      ...(messageId !== undefined ? { "data-message-id": messageId } : {}),
+      ...(testId !== undefined ? { "data-testid": testId } : {}),
+    },
+    closestNode: node,
+    throwAttributes: throwRoleAttributes,
+  });
+  return { node, roleNode };
+}
 
-  assert.equal(report.status, "blocked");
-  assert.equal(report.schemaVersion, "2");
-  assert.equal(report.errorCodes[0], "HOST_NOT_ALLOWED");
-  assert.equal(inspected, false);
-});
+function s1Entries(overrides = []) {
+  const roles = ["user", "assistant", "user", "assistant", "user", "assistant"];
+  return roles.map((role, index) => messageEntry({
+    role,
+    messageId: `synthetic-message-${index + 1}`,
+    testId: `synthetic-turn-${index + 1}`,
+    ...(overrides[index] || {}),
+  }));
+}
 
-test("blocks non-HTTPS and non-conversation paths before inspecting the document", () => {
-  for (const locationRef of [
+test("blocks non-ChatGPT hosts, protocols, and paths with the schema 3 terminal shape", () => {
+  for (const location of [
+    conversationLocation({ hostname: "example.com" }),
     conversationLocation({ protocol: "http:" }),
-    conversationLocation({ pathname: "/" }),
     conversationLocation({ pathname: "/settings" }),
   ]) {
     let inspected = false;
     const documentRef = { querySelectorAll() { inspected = true; return []; } };
-    const { report } = runProbe(documentRef, locationRef);
+    const { report } = runProbe(documentRef, location);
 
     assert.equal(report.status, "blocked");
+    assert.equal(report.schemaVersion, "3");
+    assert.equal(report.probeVersion, "0.3.0");
+    assert.equal(report.summary.valueExposure, "none");
+    assert.deepEqual(report.candidateStrategies, []);
     assert.equal(inspected, false);
   }
 });
 
-test("emits a strict structural summary without raw content or attribute values", () => {
-  const turn = new FakeNode({
-    attributes: {
-      "data-testid": "conversation-turn-real-identifier",
-      href: "https://private.example/path",
-      src: "https://private.example/image.png",
-      alt: "private-image-description",
-    },
-    textContent: "synthetic secret-shaped text that must never be emitted",
-    counts: { "p": 2, "pre": 1, "code": 1, "a": 1, "img": 1 },
-  });
-  const roleNode = new FakeNode({
-    attributes: {
-      "data-message-author-role": "assistant",
-      "data-message-id": "real-message-identifier",
-      "aria-busy": "true",
-      "aria-label": "private-account-label",
-    },
-    closestNode: turn,
-  });
-  const documentRef = createDocument([{ node: turn, roleNode }], {
-    accountLure: "private-account-region",
-  });
-  const { probe, report } = runProbe(documentRef);
+test("emits only a fixed non-exposing identity summary", () => {
+  const entries = s1Entries();
+  const { probe, report } = runProbe(createDocument(entries));
   const serialized = JSON.stringify(report);
 
   assert.deepEqual(Object.keys(probe), ["version", "run", "dispose"]);
-  assert.equal(probe.version, "0.2.0");
-  assert.equal(report.schemaVersion, "2");
+  assert.equal(probe.version, "0.3.0");
   assert.deepEqual(Object.keys(report), [
-    "schemaVersion", "probeVersion", "capturedAt", "status", "errorCodes",
-    "page", "summary", "messages", "limitations",
+    "schemaVersion", "probeVersion", "policyVersion", "capturedAt", "status", "errorCodes",
+    "page", "summary", "candidateStrategies", "limitations",
   ]);
-  assert.deepEqual(Object.keys(report.messages[0]), [
-    "ordinal", "role", "textLengthBucket", "answerStateHint", "stateEvidence", "structure", "attributePresence",
+  assert.deepEqual(Object.keys(report.page), ["surface", "hostAllowed", "pathKind", "mainRegionFound"]);
+  assert.deepEqual(Object.keys(report.summary), [
+    "messageCount", "userCount", "assistantCount", "strategyCount", "conflictCount", "valueExposure",
   ]);
   assert.equal(report.status, "observed");
+  assert.equal(report.errorCodes.length, 0);
   assert.equal(report.page.pathKind, "conversation");
-  assert.equal(report.messages[0].role, "assistant");
-  assert.equal(report.messages[0].answerStateHint, "streaming-signal");
-  assert.equal(report.messages[0].stateEvidence.ariaBusyTrue, true);
-  assert.deepEqual(report.messages[0].stateEvidence.completionActionKinds, []);
-  assert.equal(report.messages[0].structure.paragraphs, 2);
-  assert.equal(report.messages[0].structure.codeBlocks, 1);
-  assert.equal(report.messages[0].attributePresence.dataMessageId, true);
-  for (const lure of [
-    "secret-shaped", "real-message-identifier", "real-conversation-identifier",
-    "conversation-turn-real-identifier", "private.example", "private-image-description",
-    "private-account-label", "private-account-region", "account-query-lure",
-  ]) {
+  assert.equal(report.summary.messageCount, 6);
+  assert.equal(report.summary.userCount, 3);
+  assert.equal(report.summary.assistantCount, 3);
+  assert.equal(report.summary.strategyCount, 2);
+  assert.equal(report.summary.conflictCount, 0);
+  assert.equal(report.summary.valueExposure, "none");
+  assert.match(report.capturedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+  assert.deepEqual(report.candidateStrategies.map((strategy) => strategy.strategyId), [
+    "data-message-id", "data-testid-role",
+  ]);
+  for (const strategy of report.candidateStrategies) {
+    assert.equal(strategy.candidateStatus, "unique");
+    assert.equal(strategy.evidenceConfidence, "low");
+    assert.equal(strategy.valueExposure, "none");
+    assert.equal(strategy.eligibleCount, 6);
+    assert.equal(strategy.presentCount, 6);
+    assert.equal(strategy.emptyCount, 0);
+    assert.equal(strategy.readErrorCount, 0);
+    assert.equal(strategy.distinctCount, 6);
+    assert.equal(strategy.duplicateGroupCount, 0);
+    assert.equal(strategy.roleConflictCount, 0);
+  }
+  assert.deepEqual(report.limitations, []);
+  for (const lure of ["synthetic-message-1", "synthetic-message-2", "synthetic-turn-1", "synthetic-turn-2"]) {
     assert.equal(serialized.includes(lure), false, `leaked lure: ${lure}`);
   }
 });
 
-test("requires a positive copy action for completion and blocks signal conflicts", () => {
-  const copySelector = '[data-testid="copy-turn-action-button"]';
-  const feedbackSelector = '[data-testid="good-response-turn-action-button"]';
-  const completeTurn = new FakeNode({
-    textContent: "synthetic completed response",
-    counts: { [copySelector]: 1, [feedbackSelector]: 1 },
-  });
-  const completeRole = new FakeNode({
-    attributes: { "data-message-author-role": "assistant" },
-    closestNode: completeTurn,
-  });
-  const complete = runProbe(createDocument([{ node: completeTurn, roleNode: completeRole }])).report;
-
-  const conflictTurn = new FakeNode({
-    textContent: "synthetic conflicting response",
-    attributes: { "aria-busy": "true" },
-    counts: { [copySelector]: 1 },
-  });
-  const conflictRole = new FakeNode({
-    attributes: { "data-message-author-role": "assistant" },
-    closestNode: conflictTurn,
-  });
-  const conflict = runProbe(createDocument([{ node: conflictTurn, roleNode: conflictRole }])).report;
-
-  const feedbackOnlyTurn = new FakeNode({
-    textContent: "synthetic feedback-only response",
-    counts: { [feedbackSelector]: 1 },
-  });
-  const feedbackOnlyRole = new FakeNode({
-    attributes: { "data-message-author-role": "assistant" },
-    closestNode: feedbackOnlyTurn,
-  });
-  const feedbackOnly = runProbe(createDocument([{ node: feedbackOnlyTurn, roleNode: feedbackOnlyRole }])).report;
-
-  const userTurn = new FakeNode({
-    textContent: "synthetic user message",
-    counts: { [copySelector]: 1 },
-  });
-  const userRole = new FakeNode({
-    attributes: { "data-message-author-role": "user" },
-    closestNode: userTurn,
-  });
-  const user = runProbe(createDocument([{ node: userTurn, roleNode: userRole }])).report;
-
-  assert.equal(complete.messages[0].answerStateHint, "completed-signal");
-  assert.deepEqual(complete.messages[0].stateEvidence.completionActionKinds, [
-    "copy-action", "positive-feedback-action",
+test("reports duplicate, partial, and role-conflict candidates without exposing values", () => {
+  const entries = s1Entries([
+    { messageId: "same-id", testId: "same-test" },
+    { messageId: "same-id", testId: "other-test" },
+    { messageId: undefined, testId: "third-test" },
   ]);
-  assert.equal(complete.summary.completedSignalCount, 1);
-  assert.equal(conflict.messages[0].answerStateHint, "conflicting-signals");
-  assert.equal(conflict.summary.streamingSignalCount, 1);
-  assert.equal(conflict.summary.conflictingSignalCount, 1);
-  assert.equal(feedbackOnly.messages[0].answerStateHint, "unconfirmed");
-  assert.equal(user.messages[0].answerStateHint, "unconfirmed");
-  assert.deepEqual(user.messages[0].stateEvidence.completionActionKinds, []);
+  const { report } = runProbe(createDocument(entries));
+  const byId = report.candidateStrategies[0];
+  const byTest = report.candidateStrategies[1];
+
+  assert.equal(byId.candidateStatus, "ambiguous");
+  assert.equal(byId.presentCount, 5);
+  assert.equal(byId.emptyCount, 1);
+  assert.equal(byId.distinctCount, 4);
+  assert.equal(byId.duplicateGroupCount, 1);
+  assert.equal(byId.roleConflictCount, 1);
+  assert.equal(byTest.candidateStatus, "unique");
+  assert.equal(byTest.presentCount, 6);
+  assert.equal(byTest.distinctCount, 6);
+  assert.equal(report.summary.conflictCount, 1);
+  assert.deepEqual(report.limitations, ["CANDIDATE_EMPTY", "DUPLICATE_CANDIDATE", "ROLE_CONFLICT"]);
+  const serialized = JSON.stringify(report);
+  for (const lure of ["same-id", "same-test", "other-test", "third-test"]) {
+    assert.equal(serialized.includes(lure), false, `leaked lure: ${lure}`);
+  }
 });
 
-test("deduplicates only same-role candidates for the same turn", () => {
-  const turn = new FakeNode({ textContent: "synthetic" });
-  const firstRole = new FakeNode({
-    attributes: { "data-message-author-role": "user" },
-    closestNode: turn,
-  });
-  const duplicateRole = new FakeNode({
-    attributes: { "data-message-author-role": "user" },
-    closestNode: turn,
-  });
-  const { report } = runProbe(createDocument([
-      { node: turn, roleNode: firstRole },
-      { node: turn, roleNode: duplicateRole },
-    ]));
+test("keeps isolated candidate read errors in an observed ambiguous summary", () => {
+  const entries = s1Entries([
+    {
+      messageId: "safe-id",
+      testId: "safe-test",
+      throwNodeAttributes: ["data-message-id"],
+      throwRoleAttributes: ["data-message-id"],
+    },
+  ]);
+  const report = runProbe(createDocument(entries)).report;
+  const byId = report.candidateStrategies[0];
 
-  assert.equal(report.summary.messageCount, 1);
+  assert.equal(report.status, "observed");
+  assert.equal(byId.candidateStatus, "ambiguous");
+  assert.equal(byId.readErrorCount, 1);
+  assert.equal(byId.presentCount, 5);
+  assert.equal(byId.emptyCount, 0);
+  assert.deepEqual(report.limitations, ["VALUE_READ_ERROR"]);
+  assert.deepEqual(report.errorCodes, []);
 });
 
-test("blocks missing, ambiguous, empty, and role-conflicting roots", () => {
+test("blocks missing, ambiguous, empty, conflicting, and excessive roots", () => {
   const missing = runProbe(createDocument([], { mainCount: 0 })).report;
   const ambiguous = runProbe(createDocument([], { mainCount: 2 })).report;
   const empty = runProbe(createDocument([])).report;
 
-  const turn = new FakeNode({ textContent: "synthetic" });
+  const turn = new FakeNode();
   const userRole = new FakeNode({ attributes: { "data-message-author-role": "user" }, closestNode: turn });
   const assistantRole = new FakeNode({ attributes: { "data-message-author-role": "assistant" }, closestNode: turn });
   const conflict = runProbe(createDocument([
@@ -246,34 +225,125 @@ test("blocks missing, ambiguous, empty, and role-conflicting roots", () => {
     { node: turn, roleNode: assistantRole },
   ])).report;
 
+  const excessiveEntries = Array.from({ length: 21 }, () => messageEntry({ role: "user" }));
+  const excessive = runProbe(createDocument(excessiveEntries)).report;
+
   assert.equal(missing.errorCodes[0], "MAIN_REGION_NOT_FOUND");
   assert.equal(ambiguous.errorCodes[0], "MAIN_REGION_AMBIGUOUS");
   assert.equal(empty.errorCodes[0], "MESSAGE_CANDIDATES_NOT_FOUND");
   assert.equal(conflict.errorCodes[0], "ROLE_CONTAINER_CONFLICT");
-  assert.equal(conflict.status, "blocked");
+  assert.equal(excessive.errorCodes[0], "MESSAGE_CANDIDATE_LIMIT_EXCEEDED");
+  for (const report of [missing, ambiguous, empty, conflict, excessive]) {
+    assert.equal(report.status, "blocked");
+    assert.deepEqual(report.candidateStrategies, []);
+  }
 });
 
-test("blocks excessive candidates and containers outside the unique root", () => {
-  const excessiveEntries = Array.from({ length: 501 }, () => {
-    const roleNode = new FakeNode({ attributes: { "data-message-author-role": "user" } });
+test("enforces the S1 six-message alternating shape before candidate reads", () => {
+  let candidateReads = 0;
+  const makeRoleNode = (role) => ({
+    getAttribute(name) {
+      if (name === "data-message-author-role") return role;
+      candidateReads += 1;
+      throw new Error("candidate-value-lure");
+    },
+    closest() { return this; },
+  });
+  const invalidEntries = ["user", "assistant"].map((role) => {
+    const roleNode = makeRoleNode(role);
     return { node: roleNode, roleNode };
   });
-  const excessive = runProbe(createDocument(excessiveEntries)).report;
+  const report = runProbe(createDocument(invalidEntries)).report;
 
-  const outsideRole = new FakeNode({ attributes: { "data-message-author-role": "assistant" } });
-  const outsideMain = {
-    querySelectorAll() { return [outsideRole]; },
-    contains() { return false; },
-  };
-  const outsideDocument = {
-    querySelectorAll(selector) { return selector === "main" ? [outsideMain] : []; },
-  };
-  const outside = runProbe(outsideDocument).report;
+  assert.equal(report.status, "blocked");
+  assert.deepEqual(report.errorCodes, ["S1_SHAPE_REQUIRED"]);
+  assert.deepEqual(report.candidateStrategies, []);
+  assert.equal(candidateReads, 0);
+});
 
-  assert.equal(excessive.errorCodes[0], "MESSAGE_CANDIDATE_LIMIT_EXCEEDED");
-  assert.equal(outside.errorCodes[0], "MESSAGE_CONTAINER_OUTSIDE_ROOT");
-  assert.equal(excessive.status, "blocked");
-  assert.equal(outside.status, "blocked");
+test("contains page getter and DOM method failures behind a fixed runtime error", () => {
+  const closestFailure = s1Entries();
+  closestFailure[0].roleNode.closest = () => { throw new Error("closest-value-lure"); };
+  const closestReport = runProbe(createDocument(closestFailure)).report;
+
+  const main = {
+    querySelectorAll() { return s1Entries().map((entry) => entry.roleNode); },
+    contains() { throw new Error("contains-value-lure"); },
+  };
+  const containsReport = runProbe({ querySelectorAll(selector) {
+    return selector === "main" ? [main] : [];
+  } }).report;
+
+  for (const report of [closestReport, containsReport]) {
+    assert.equal(report.status, "error");
+    assert.deepEqual(report.errorCodes, ["PROBE_RUNTIME_FAILURE"]);
+    assert.deepEqual(report.candidateStrategies, []);
+    assert.equal(JSON.stringify(report).includes("lure"), false);
+  }
+});
+
+test("contains location and clock failures without exposing exception text", () => {
+  const hostileLocation = {};
+  Object.defineProperty(hostileLocation, "hostname", {
+    get() { throw new Error("location-value-lure"); },
+  });
+  const locationContext = { document: createDocument(s1Entries()), location: hostileLocation };
+  const locationReport = normalize(loadProbe(locationContext).probe.run());
+
+  let inspected = 0;
+  const clockContext = {
+    document: {
+      querySelectorAll() { inspected += 1; return []; },
+    },
+    location: conversationLocation(),
+    Date: class BrokenDate {
+      toISOString() { throw new Error("clock-value-lure"); }
+    },
+  };
+  const clockReport = normalize(loadProbe(clockContext).probe.run());
+
+  for (const report of [locationReport, clockReport]) {
+    assert.equal(report.status, "error");
+    assert.deepEqual(report.errorCodes, ["PROBE_RUNTIME_FAILURE"]);
+    assert.equal(JSON.stringify(report).includes("lure"), false);
+  }
+  assert.equal(inspected, 0);
+  assert.equal(clockReport.capturedAt, null);
+});
+
+test("deduplicates only same-role candidates for the same turn", () => {
+  const turn = new FakeNode();
+  const firstRole = new FakeNode({ attributes: { "data-message-author-role": "user" }, closestNode: turn });
+  const duplicateRole = new FakeNode({ attributes: { "data-message-author-role": "user" }, closestNode: turn });
+  const { report } = runProbe(createDocument([
+    { node: turn, roleNode: firstRole },
+    { node: turn, roleNode: duplicateRole },
+    ...s1Entries().map((entry) => entry).slice(1),
+  ]));
+
+  assert.equal(report.summary.messageCount, 6);
+});
+
+test("enforces two run calls and does not inspect the page after the quota", () => {
+  let inspected = 0;
+  const documentRef = {
+    querySelectorAll(selector) {
+      inspected += 1;
+      return selector === "main" ? [] : [];
+    },
+  };
+  const { probe } = loadProbe({ document: documentRef, location: conversationLocation() });
+
+  const first = normalize(probe.run());
+  const second = normalize(probe.run());
+  const beforeThird = inspected;
+  const third = normalize(probe.run());
+
+  assert.equal(first.status, "blocked");
+  assert.equal(second.status, "blocked");
+  assert.equal(third.status, "blocked");
+  assert.deepEqual(third.errorCodes, ["RUN_QUOTA_EXHAUSTED"]);
+  assert.equal(inspected, beforeThird);
 });
 
 test("global installation blocks collisions and can be explicitly disposed", () => {
@@ -282,8 +352,29 @@ test("global installation blocks collisions and can be explicitly disposed", () 
 
   assert.throws(() => vm.runInNewContext(probeSource, context), /AICM_PROBE_GLOBAL_CONFLICT/);
   assert.equal(probe.dispose(), true);
+  assert.equal(probe.dispose(), false);
   assert.equal(Object.prototype.hasOwnProperty.call(context, "AICMReadonlyProbe"), false);
   assert.doesNotThrow(() => vm.runInNewContext(probeSource, context));
+});
+
+test("disposed references cannot inspect the page or revive the run quota", () => {
+  let inspected = 0;
+  const documentRef = {
+    querySelectorAll(selector) {
+      inspected += 1;
+      return selector === "main" ? [] : [];
+    },
+  };
+  const { probe } = loadProbe({ document: documentRef, location: conversationLocation() });
+
+  probe.run();
+  const beforeDispose = inspected;
+  assert.equal(probe.dispose(), true);
+  const afterDispose = normalize(probe.run());
+
+  assert.equal(inspected, beforeDispose);
+  assert.equal(afterDispose.status, "blocked");
+  assert.deepEqual(afterDispose.errorCodes, ["PROBE_DISPOSED"]);
 });
 
 test("source contains no external I/O or page interaction APIs", () => {

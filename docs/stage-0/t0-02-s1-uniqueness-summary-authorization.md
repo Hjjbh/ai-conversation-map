@@ -19,7 +19,7 @@
 | 运行决策编号 | `D0-08B`（待绑定） |
 | 目标页面 | 原 S1 专用、非敏感、可丢弃的合成 ChatGPT 会话 |
 | 页面状态 | 3 个已完成 Question + Answer Turn 的静态页面；不刷新、不新增消息 |
-| 候选探针 | 新修订 `0.3.0`、候选 schema `3`；实现和 QSR 放行后才填写精确 SHA-256 |
+| 候选探针 | `0.3.0`、schema `3`；实现文件 SHA-256：`1676F6A40C53833F69B5EF79A0A9ABA7D11AEECF23927DCCD134489762973D30` |
 | 运行编号 | `T0-02-S1-UNIQUENESS-R01`、`T0-02-S1-UNIQUENESS-R02` |
 | 新增运行次数 | 两次，均为同一静态 DOM 生命周期内的独立只读读取 |
 | 输出 | 仅值不外露的白名单 JSON 摘要；不得保存原值或可逆派生值 |
@@ -30,11 +30,11 @@
 
 下列条件必须全部满足，才可把本方案转化为实际运行授权：
 
-1. 完成 `0.3.0` 候选探针实现和本地单元/合成测试。
+1. 完成 `0.3.0` 候选探针实现和本地单元/合成测试（D0-08A 已完成）。
 2. 探针仅在内存中暂时读取待比较的属性值；返回对象、全局对象、异常对象和日志均通过白名单序列化。
-3. QSR 复核输出字段、脱敏边界、唯一性算法、失败降级和清理路径，并给出 PASS。
-4. 在本文件中补入最终 `probeVersion`、`schemaVersion`、SHA-256、测试命令和 QSR 复核引用。
-5. PO 先批准 `D0-08A` 方案/实现准备；页面运行还必须另行创建 `D0-08B`，绑定最终版本、schema、SHA-256 并取得包含这些字段的明确批准。仅批准 `D0-08A` 不产生页面运行额度。
+3. QSR 复核输出字段、脱敏边界、唯一性算法、失败降级和清理路径，并给出实现级 PASS。
+4. 在本文件中保留最终 `probeVersion`、`schemaVersion`、SHA-256、测试命令和 QSR 复核引用。
+5. PO 已批准 `D0-08A` 方案/实现准备；页面运行还必须另行创建 `D0-08B`，绑定最终版本、schema、SHA-256 并取得包含这些字段的明确批准。仅批准 `D0-08A` 不产生页面运行额度。
 
 ## 3. 非暴露摘要契约
 
@@ -52,6 +52,7 @@
   "errorCodes": [],
   "page": {
     "surface": "chatgpt-web",
+    "hostAllowed": true,
     "pathKind": "conversation",
     "mainRegionFound": true
   },
@@ -87,9 +88,9 @@
 
 - 顶层允许键固定为 `schemaVersion`、`probeVersion`、`policyVersion`、`capturedAt`、`status`、`errorCodes`、`page`、`summary`、`candidateStrategies`、`limitations`；`page`、`summary` 和策略对象也只能使用示例中列出的键，未知键一律阻断。
 - `status` 只能是 `observed`、`blocked` 或 `error`；`errorCodes` 只能使用预登记的抽象错误码，最多 8 项，不得包含自由文本、异常消息或页面数据。
-- `errorCodes` 必须来自固定集合 `ROOT_NOT_FOUND`、`MULTIPLE_ROOTS`、`CANDIDATE_EMPTY`、`CANDIDATE_DUPLICATE`、`ROLE_CONFLICT`、`VALUE_READ_ERROR`、`OUTPUT_SCHEMA_MISMATCH`、`VALUE_EXPOSURE_BLOCKED`、`RUN_QUOTA_EXHAUSTED`；单次最多 8 项且不得重复，按上述列举顺序输出。
+- `errorCodes` 必须来自固定集合 `PROTOCOL_NOT_ALLOWED`、`HOST_NOT_ALLOWED`、`CONVERSATION_PATH_REQUIRED`、`MAIN_REGION_NOT_FOUND`、`MAIN_REGION_AMBIGUOUS`、`MESSAGE_CANDIDATE_LIMIT_EXCEEDED`、`MESSAGE_CONTAINER_OUTSIDE_ROOT`、`ROLE_CONTAINER_CONFLICT`、`MESSAGE_CANDIDATES_NOT_FOUND`、`OUTPUT_SCHEMA_MISMATCH`、`VALUE_EXPOSURE_BLOCKED`、`RUN_QUOTA_EXHAUSTED`、`PROBE_DISPOSED`、`PROBE_RUNTIME_FAILURE`、`S1_SHAPE_REQUIRED`；单次最多 8 项且不得重复，按上述列举顺序输出。
 - `status=observed` 时 `errorCodes` 必须为空；`status=blocked` 或 `error` 时至少包含一个固定错误码，且不得借错误码字段携带其他文本。
-- `page.surface` 固定为 `chatgpt-web`，`page.pathKind` 固定为 `conversation`；不得返回其他站点、完整路由或 URL。
+- `page.surface` 只能是 `chatgpt-web` 或阻断态的 `unconfirmed`；`page.hostAllowed` 只能是布尔值；`page.pathKind` 只能是 `conversation`、`home`、`other` 或 `unknown`。不得返回其他站点、完整路由或 URL。
 - `strategyId` 只能来自构建版本固定的预登记集合 `data-message-id`、`data-testid-role`，单次最多返回 2 个策略；不得返回属性值、选择器文本或 DOM 片段。
 - `candidateStrategies` 只能按预登记顺序 `data-message-id` → `data-testid-role` 输出；是否省略不适用策略只能由静态策略适用性决定，不得由候选原值、去重结果或调用方输入改变顺序。
 - `scope` 固定为 `message-root`；`eligibleCount` 是纳入比较的消息根数量。
@@ -105,7 +106,8 @@
 - `evidenceConfidence` 是“本次诊断摘要”的置信度，不能写入 `identityConfidence`，不能升级到 Tier 1/2。
 - `valueExposure` 必须固定为 `none`。任一原值、原值数组、原值长度、原值哈希、可逆映射或异常上下文进入返回对象都属于熔断。
 - `limitations` 只能使用固定集合 `CANDIDATE_EMPTY`、`DUPLICATE_CANDIDATE`、`ROLE_CONFLICT`、`VALUE_READ_ERROR`、`VALUE_EXPOSURE_BLOCKED`，单次最多 8 项且不得重复，按上述列举顺序输出；不得写入自由文本、正文片段或异常上下文。
-- `capturedAt` 只能由探针本地时钟生成标准 UTC ISO-8601 字符串（等价于 `Date.prototype.toISOString()`），不得取自页面、候选属性或异常文本。
+- `capturedAt` 只能由探针本地时钟生成标准 UTC ISO-8601 字符串（等价于 `Date.prototype.toISOString()`），不得取自页面、候选属性或异常文本。正常运行路径若本地时钟不可用，探针必须直接返回固定 `PROBE_RUNTIME_FAILURE` 终态；该终态允许 `capturedAt: null`，不得继续读取页面。若探针已经 `dispose()` 或达到运行配额，`PROBE_DISPOSED`/`RUN_QUOTA_EXHAUSTED` 终态优先，时钟不可用时同样允许 `capturedAt: null`，且不得读取页面。
+- D0-08A 的实现必须在读取任何候选属性前验证 S1 静态范围：去重后的消息根恰好 6 个，角色恰好 3 个 `user` 与 3 个 `assistant`，并按 `user → assistant` 严格交替；否则返回 `status=blocked`、`errorCodes=["S1_SHAPE_REQUIRED"]` 和空 `candidateStrategies`。
 - 不计算正文内容指纹，不读取网络响应、Cookie、令牌或账户信息，不把摘要写入 IndexedDB、`chrome.storage`、剪贴板或远端服务。
 
 ### 3.2 内存处理边界
@@ -158,12 +160,14 @@
 - 若无法证明候选值已被完全抑制、计数不变量不成立、根节点歧义无法安全摘要，或任一非白名单数据进入对象，则返回 `status=blocked` 或 `error`、固定 `errorCodes`，`candidateStrategies` 必须为空，不保留部分策略摘要。
 
 1. 探针版本、schema、策略版本或 SHA-256 不匹配。
-2. 页面不是原 S1 合成会话，消息数、角色或静态页面前提不满足。
+2. 页面不是原 S1 合成会话，或去重后的消息根不是 6 条、角色不是 3+3、顺序不是严格 `user → assistant` 交替；候选属性读取前必须以 `S1_SHAPE_REQUIRED` 阻断。
 3. 返回对象未通过**精确字段白名单**校验，或出现精确禁止键/模式（如 `rawValue`、`attributeValue`、`sourceId`、`conversationId`、`messageId`、`url`、`text`、`dom`、`locator`、`hash`、`token`、`cookie`、`stack`、`message`）；不得用对合法键名的简单子串匹配代替白名单校验。`strategyId`、`valueExposure` 等合法字段不因名称包含 `id`/`value` 而触发熔断。
 4. 任一错误对象、调试输出、全局变量、扩展消息或临时文件包含候选原值、正文、URL 或 DOM。
 5. 探针尝试使用网络、持久化、剪贴板、下载、额外权限或页面状态变更能力。
 6. 出现多个候选根、无法安全摘要的候选值读取/比较错误，或算法需要读取完整正文才能继续；可安全计数的角色冲突或单槽位读取错误按本节前述可恢复路径处理。
 7. 页面刷新、关闭、切换或新增消息；R01 未确认接收前尝试运行 R02。
+8. `dispose()` 已执行；任何仍被调用方持有的旧引用再次调用 `run()` 只能返回固定 `PROBE_DISPOSED`，不得访问页面。
+9. 任一页面 getter、`closest()`、`contains()` 或其他运行时读取抛出异常；探针必须吞掉异常对象并返回固定 `PROBE_RUNTIME_FAILURE` 终态，不得把异常 message/stack 带入任何出口。
 
 熔断后不得为了“补齐样本”继续运行；任何恢复都需要修订方案、QSR 复核和新的 PO 决策。
 
@@ -198,24 +202,26 @@
 
 ### 推荐决定
 
-原则上批准 `D0-08A` 的**方案与实现准备**，允许在完成 `0.3.0` 候选探针、QSR PASS、SHA-256 补录和独立创建 `D0-08B` 后，申请两次同一静态 S1 页面只读读取。`D0-08A` 的批准不等于页面运行授权；任何“批准 D0-08A”文字都不得被解释为 R01/R02 放行。
+`D0-08A` 已获 PO 授权并完成方案/实现准备。页面运行还必须独立创建 `D0-08B`，绑定最终版本、schema、SHA-256、测试结果和 QSR 实现级 PASS。任何“批准 D0-08A”文字都不得被解释为 R01/R02 放行。
 
 `D0-08B` 是唯一的运行批准编号，必须在本节绑定最终 `probeVersion`、`schemaVersion`、SHA-256、策略版本、测试结果和 QSR 引用，并由 PO 明确批准。批准原文应包含完整绑定信息，例如：`批准 D0-08B：probeVersion=0.3.0；schemaVersion=3；probeSha256=<完整 SHA-256>`。
 
 ### 待填写的运行绑定
 
 ```text
-probeVersion: 0.3.0 | pending implementation
-schemaVersion: 3 | pending QSR
-probeSha256: pending QSR and implementation
+probeVersion: 0.3.0
+schemaVersion: 3
+probeSha256: 1676F6A40C53833F69B5EF79A0A9ABA7D11AEECF23927DCCD134489762973D30
 policyVersion: identity-summary-0.1
-QSR review: pending
-PO approval: pending
+testCommand: node --test tools/stage-0/chatgpt-readonly-probe.test.js
+testResult: 13/13 pass
+QSR review: implementation-level PASS (2026-09-08)
+PO approval: D0-08A approved for local implementation; D0-08B pending
 ```
 
 ### 当前状态
 
-**D0-08A 待 QSR 复核与 PO 明确批准；D0-08B 尚未创建；R01/R02 均未授权、未运行。**
+**D0-08A 已获 PO 授权并完成本地实现/测试，GDE 与 QSR 实现级复核均 PASS；D0-08B 尚未创建；R01/R02 均未授权、未运行。**
 
 ### 不在本方案内的后续事项
 

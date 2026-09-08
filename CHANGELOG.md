@@ -1039,5 +1039,47 @@
 
 ### 遗留事项
 
-- D0-08A 已通过 GDE/QSR 方案级复核，仍待 PO 明确批准；D0-08B 尚未创建；`0.3.0` 实现、测试与 SHA-256 尚未生成。
+- D0-08A 已通过 GDE/QSR 方案级复核并获 PO 授权；`0.3.0` 实现与测试已完成，D0-08B 尚未创建，页面运行仍未授权。
 - R01/R02 未授权、未运行；T0-02 稳定 ID、跨刷新 locator、修订和回答版本仍为 `unknown`。
+
+---
+
+## 2026-09-08｜阶段：D0-08A 0.3.0 非暴露摘要实现
+
+### 修改目的
+
+落实 PO 对 D0-08A 的授权，在不访问真实页面的前提下，将非暴露唯一性摘要契约实现为本地 0.3.0 探针，并为后续 D0-08B 运行绑定准备可复核产物。
+
+### 实际变更
+
+1. 将隔离探针升级为 `0.3.0`、schema `3`、策略版本 `identity-summary-0.1`。
+2. 仅保留构建时固定顺序的 `data-message-id` 与 `data-testid-role` 两个 `message-root` 策略。
+3. 在内存中计算候选出现、缺失、读取错误、不同值、重复组和角色冲突计数；返回对象不含候选原值、长度或哈希。
+4. 固定白名单字段、枚举、计数不变量、`candidateStatus` 计算优先级、限制码/错误码顺序和 `capturedAt` UTC 格式；时钟异常返回固定运行时错误。
+5. 增加 S1 去重后 6 条消息、3 user/3 assistant、严格交替的候选读取前置门禁；形状不符时返回 `S1_SHAPE_REQUIRED` 且不读取候选属性。
+6. 增加安全 `observed + ambiguous` 与致命 `blocked/error` 路径；增加最多两次 `run()`、第三次固定 `RUN_QUOTA_EXHAUSTED`、`dispose()` 后旧引用固定 `PROBE_DISPOSED` 且不再读页面、全路径异常封装和无外部 I/O 约束。
+7. 重写合成测试，覆盖唯一、重复、部分缺失、角色冲突、读取错误、S1 形状门禁、根节点/DOM/location/时钟异常、运行配额、全局冲突、处置旧引用、清理和敏感出口检查（13 项）。
+8. 在 D0-08 方案中补入实现 SHA-256、测试命令和当前 PO/QSR 门禁状态，并更新阶段索引、任务卡和身份契约。
+
+### 修改文件
+
+- `tools/stage-0/chatgpt-readonly-probe.js`
+- `tools/stage-0/chatgpt-readonly-probe.test.js`
+- `docs/stage-0/t0-02-s1-uniqueness-summary-authorization.md`
+- `docs/stage-0/README.md`
+- `docs/stage-0/task-cards.md`
+- `docs/stage-0/02-identity-contract.md`
+- `CHANGELOG.md`
+
+### 验证结果
+
+- `node --check tools/stage-0/chatgpt-readonly-probe.js` 通过。
+- `node --test tools/stage-0/chatgpt-readonly-probe.test.js`：13/13 通过。
+- 探针 SHA-256：`1676F6A40C53833F69B5EF79A0A9ABA7D11AEECF23927DCCD134489762973D30`。
+- 本轮未访问页面、未读取新页面、未使用网络/存储/剪贴板、未新增权限、未执行状态变更。
+- 方案级 GDE/QSR PASS 已记录；实现级 GDE/QSR 已完成最终独立复核并 PASS，D0-08B 尚未创建。
+
+### 遗留事项
+
+- 实现级 QSR 复核通过且 D0-08B 绑定完整版本/schema/SHA/策略/测试后，才可申请 R01/R02 页面运行。
+- 任何页面运行、跨刷新验证、S2/S3、定位、分支、编辑、重试和回答版本验证仍未授权。
