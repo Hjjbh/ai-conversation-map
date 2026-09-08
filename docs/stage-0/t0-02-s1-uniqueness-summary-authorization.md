@@ -16,7 +16,7 @@
 | 项目 | 限定范围 |
 |---|---|
 | 方案决策编号 | `D0-08A` |
-| 运行决策编号 | `D0-08B`（待绑定） |
+| 运行决策编号 | `D0-08B`（已绑定并获 PO 批准） |
 | 目标页面 | 原 S1 专用、非敏感、可丢弃的合成 ChatGPT 会话 |
 | 页面状态 | 3 个已完成 Question + Answer Turn 的静态页面；不刷新、不新增消息 |
 | 候选探针 | `0.3.0`、schema `3`；实现文件 SHA-256：`1676F6A40C53833F69B5EF79A0A9ABA7D11AEECF23927DCCD134489762973D30` |
@@ -204,7 +204,7 @@
 
 `D0-08A` 已获 PO 授权并完成方案/实现准备。页面运行还必须独立创建 `D0-08B`，绑定最终版本、schema、SHA-256、测试结果和 QSR 实现级 PASS。任何“批准 D0-08A”文字都不得被解释为 R01/R02 放行。
 
-`D0-08B` 是唯一的运行批准编号，必须在本节绑定最终 `probeVersion`、`schemaVersion`、SHA-256、策略版本、测试结果和 QSR 引用，并由 PO 明确批准。批准原文应包含完整绑定信息，例如：`批准 D0-08B：probeVersion=0.3.0；schemaVersion=3；probeSha256=<完整 SHA-256>`。
+`D0-08B` 是唯一的运行批准编号，现已在本节绑定最终 `probeVersion`、`schemaVersion`、SHA-256、策略版本、测试结果和 QSR 引用，并由 PO 明确批准。该批准只放行 R01/R02 的限定页面读取，不放行其他会话、其他版本或任何页面交互。
 
 ### 待填写的运行绑定
 
@@ -216,12 +216,12 @@ policyVersion: identity-summary-0.1
 testCommand: node --test tools/stage-0/chatgpt-readonly-probe.test.js
 testResult: 13/13 pass
 QSR review: implementation-level PASS (2026-09-08)
-PO approval: D0-08A approved for local implementation; D0-08B pending
+PO approval: D0-08B approved for R01/R02 with the exact binding above
 ```
 
 ### 当前状态
 
-**D0-08A 已获 PO 授权并完成本地实现/测试，GDE 与 QSR 实现级复核均 PASS；D0-08B 尚未创建；R01/R02 均未授权、未运行。**
+**D0-08A 已获 PO 授权并完成本地实现/测试，GDE 与 QSR 实现级复核均 PASS；D0-08B 已按完整绑定获 PO 批准，R01/R02 已授权但尚未运行。**
 
 ### 不在本方案内的后续事项
 
