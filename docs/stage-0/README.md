@@ -25,7 +25,7 @@
 | 编号 | 工作包 | 主责 | 复核 | 当前状态 |
 |---|---|---|---|---|
 | T0-01 | ChatGPT 页面与消息结构盘点 | ADP | QSR | D0-07 的 `POSTREFRESH-R01` 已执行且与 V02-R01 脱敏值树一致，QSR 复核 PASS；S2/S3 未运行 |
-| T0-02 | 会话/消息稳定身份验证 | ADP | GDE + QSR | 契约就绪，待样本验证 |
+| T0-02 | 会话/消息稳定身份验证 | ADP | GDE + QSR | 已建立 S1 证据边界矩阵；稳定身份、版本和 locator 仍未确认 |
 | T0-03 | 双向定位技术验证 | ADP + UIE | QSR | 协议就绪，待环境验证 |
 | T0-04 | 真实分支路径验证 | ADP | TL + QSR | 初步报告完成，能力未确认 |
 | T0-05 | 隐私、权限与探针边界 | QSR | TL | 推荐决策包已获 PO 批准 |
@@ -56,6 +56,7 @@
 - `t0-01-s1-post-refresh-authorization.md`：D0-07 刷新后单次前瞻性只读观察的范围、证据边界和 PO 决策区。
 - `test-sessions/`：S1、S2、S3 合成测试会话脚本；不等同于真实页面 fixture。
 - `evidence/`：阶段 0 脱敏观察与复核记录。
+- `evidence/T0-02-S1-identity-matrix.md`：基于 S1 已归档观察的身份能力矩阵与降级结论。
 - `06-stage-conclusion.md`：阶段结论；仅在证据齐全后创建。
 
 ## 退出标准
