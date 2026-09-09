@@ -5,7 +5,7 @@
 - 决策编号：`D0-09B`。
 - 上位方案：[D0-09A T0-03 S1 临时单向定位动作授权方案](t0-03-s1-locate-authorization.md)。
 - 授权状态：**已创建并获 PO 批准**。
-- 运行状态：当前仅开放 R01；R02 是在 R01 安全接收、未熔断且会话哨兵仍有效后的条件额度；截至本记录创建时，真实页面尚未运行。
+- 运行状态：R01 已执行但因 `CONVERSATION_CHANGED` 熔断；R02 未执行且已作废，当前无剩余运行额度。
 - 批准依据：PO 明确指令“创建并批准 D0-09B”。该批准不等同于已执行 R01/R02，也不扩大到其他会话、版本或页面动作。
 
 本决策只绑定已复核的定位摘要探针和同一 S1 静态合成会话。任何绑定字段、页面前置条件、动作参数或清理策略不一致，均立即停止，不得以旧批准补救。
@@ -98,10 +98,10 @@ testSha256: 12C8867DDE0CA84465AF87CE2ECF0CBA75938A9BE5E4F2A3D8A325C40A9BC0EF
 testResult: locate 18/18 pass; Stage 0 31/31 pass
 pageScope: original S1 synthetic ChatGPT conversation only
 actionScope: one bounded scroll + visual confirmation + temporary overlay with mandatory cleanup
-R01: currently authorized, not yet run
-R02: conditional authorization only after safe R01 receipt and valid sentinel, not yet run
+R01: executed; error CONVERSATION_CHANGED; quota closed
+R02: void; not executed because R01 returned CONVERSATION_CHANGED and triggered the fuse
 ```
 
 批准人：PO（用户明确指令“创建并批准 D0-09B”）。
 
-**当前结论：D0-09B 已创建并批准；运行额度已准备但尚未使用。**
+**当前结论：D0-09B 已创建并批准；R01 已熔断并登记失败证据，R02 未执行且额度已作废。**

@@ -1250,3 +1250,31 @@
 
 - D0-09B 已授权但 R01 尚未执行；执行前仍需人工核对页面范围、工作树、版本和 SHA-256，并按文档顺序先 R01、后安全接收确认、再 R02。
 - 稳定身份、跨刷新 locator、完整双向地图定位和真实分支仍未获得结论。
+
+---
+
+## 2026-09-09｜阶段：D0-09B R01 定位运行熔断
+
+### 修改目的
+
+登记操作人按 D0-09B 执行的首次 R01 脱敏结果，并明确因会话变化熔断后 R02 额度作废；不重试页面动作。
+
+### 实际变更
+
+1. 新增 `docs/stage-0/evidence/T0-03-S1-locate-r01.md`，登记 `T0-03-S1-LOCATE-R01` 的固定 schema 1 失败摘要：`status=error`、`errorCodes=["CONVERSATION_CHANGED"]`、页面字段为 unknown、`valueExposure=none`。
+2. 记录操作人随后调用 `AICMLocateSummaryProbe.dispose()` 时全局对象已不存在；该结果与探针熔断自动销毁行为一致，未重新加载、未重试、未执行 R02。
+3. 更新 D0-09B、D0-09A、阶段 README 和任务卡：R01 已熔断，R02 未执行且额度作废；如需继续验证，必须重新创建授权。
+4. 按 QSR 复核意见将 R02 作废原因精确记录为 R01 返回 `CONVERSATION_CHANGED` 并触发熔断；GDE/QSR 证据复核通过。
+
+涉及文件：`docs/stage-0/evidence/T0-03-S1-locate-r01.md`、`docs/stage-0/d0-09b-s1-locate-run-authorization.md`、`docs/stage-0/t0-03-s1-locate-authorization.md`、`docs/stage-0/README.md`、`docs/stage-0/task-cards.md`、`CHANGELOG.md`。
+
+### 验证结果
+
+- 仅登记用户提供的固定脱敏字段；未保存 Console 历史、截图、正文、DOM、URL、真实 ID、Cookie、令牌或网络数据。
+- 定位探针测试 `18/18 pass`；Stage 0 全套测试 `31/31 pass`；`git diff --check` 通过。
+- 本次结果不支持定位成功、稳定 ID、locator 或地图双向链路结论。
+
+### 遗留事项
+
+- R01 已失败且 D0-09B 额度已关闭；不得在本授权下运行 R02。
+- 任何新一轮验证必须针对新的页面生命周期重新制定、复核并批准新的运行授权。
