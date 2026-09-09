@@ -58,7 +58,7 @@
 - `evidence/`：阶段 0 脱敏观察与复核记录。
 - `evidence/T0-02-S1-identity-matrix.md`：基于 S1 已归档观察的身份能力矩阵与降级结论。
 - `evidence/T0-02-S1-uniqueness-r01-r02.md`：D0-08B R01/R02 的非暴露唯一性摘要结果与清理记录。
-- `t0-02-s1-uniqueness-summary-authorization.md`：D0-08A/D0-08B 非暴露唯一性摘要的候选输出契约与两次只读运行授权边界（D0-08A 实现级 GDE/QSR PASS；D0-08B 已批准，R01/R02 待执行）。
+- `t0-02-s1-uniqueness-summary-authorization.md`：D0-08A/D0-08B 非暴露唯一性摘要的候选输出契约与两次只读运行授权边界（D0-08A 实现级 GDE/QSR PASS；D0-08B 已批准且 R01/R02 已完成）。
 - `06-stage-conclusion.md`：阶段结论；仅在证据齐全后创建。
 
 ## 退出标准
