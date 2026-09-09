@@ -1220,3 +1220,33 @@
 
 - 必须完成 GDE + QSR 实现级独立复核，并由 PO 明确批准绑定最终版本、schema、SHA-256、动作参数、watchdog、测试结果和 R01/R02 失效规则的 D0-09B，才可进入真实 S1 页面运行。
 - 滚动副作用、稳定 ID、正式 `sourceLocator` 和完整双向地图定位结论仍未取得。
+
+---
+
+## 2026-09-09｜阶段：D0-09B T0-03 S1 临时定位运行授权
+
+### 修改目的
+
+将已通过 D0-09A 实现级复核的定位摘要探针绑定到一次限定的 R01/R02 运行授权，并记录 PO 的明确批准；本次不执行真实页面动作。
+
+### 实际变更
+
+1. 新增 `docs/stage-0/d0-09b-s1-locate-run-authorization.md`，绑定 `probeVersion=0.1.0`、`schemaVersion=1`、`policyVersion=locate-summary-0.1`、实现 SHA-256=`DE6009330A133C0A8DBFDD65241190E7E9B62664BDBF4645D414153FECF5BBD9`、测试 SHA-256=`12C8867DDE0CA84465AF87CE2ECF0CBA75938A9BE5E4F2A3D8A325C40A9BC0EF` 和 Stage 0 `31/31 pass`。
+2. 明确 D0-09B 仅覆盖原 S1 非敏感合成 ChatGPT 会话、R01/R02 各一次、R01 安全接收后才可 R02；固定一次滚动、视觉确认、50 ms 临时 overlay、1500 ms 清理 watchdog 和 5000 ms 单次截止时间。
+3. 更新 D0-09A 文档、阶段 README 和任务卡，登记 D0-09B 已批准但真实环境尚未运行。
+4. 记录 PO 明确指令“创建并批准 D0-09B”；GDE 与 QSR 对最终实现/绑定复核均为 PASS。
+5. 按 GDE/QSR 复核意见明确仅当前开放 R01、R02 为条件额度；将批准失效边界限定为探针/测试文件、运行边界或权限变化，并补充批准后 R01 前页面变化的全额作废规则；README 同步 D0-09B 的受限可见副作用状态。
+
+涉及文件：`docs/stage-0/d0-09b-s1-locate-run-authorization.md`、`docs/stage-0/t0-03-s1-locate-authorization.md`、`docs/stage-0/README.md`、`docs/stage-0/task-cards.md`、`CHANGELOG.md`。
+
+### 验证结果
+
+- 定位摘要探针测试 `18/18 pass`；Stage 0 全套测试 `31/31 pass`。
+- GDE/QSR 最终复核均为实现级 PASS；实现和测试 SHA-256 与授权文档一致。
+- Markdown 本地链接检查：31 个文件、0 个缺失；`git diff --check` 通过。
+- 本次未访问 ChatGPT，未执行滚动、高亮、导航、输入、发送或其他页面动作。
+
+### 遗留事项
+
+- D0-09B 已授权但 R01 尚未执行；执行前仍需人工核对页面范围、工作树、版本和 SHA-256，并按文档顺序先 R01、后安全接收确认、再 R02。
+- 稳定身份、跨刷新 locator、完整双向地图定位和真实分支仍未获得结论。
