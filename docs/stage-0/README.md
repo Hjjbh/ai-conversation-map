@@ -26,7 +26,7 @@
 |---|---|---|---|---|
 | T0-01 | ChatGPT 页面与消息结构盘点 | ADP | QSR | D0-07 的 `POSTREFRESH-R01` 已执行且与 V02-R01 脱敏值树一致，QSR 复核 PASS；S2/S3 未运行 |
 | T0-02 | 会话/消息稳定身份验证 | ADP | GDE + QSR | 已建立 S1 证据边界矩阵；D0-08A 实现级 GDE/QSR PASS；D0-08B 已批准，R01/R02 已完成并登记脱敏证据；稳定身份、版本和 locator 仍未确认 |
-| T0-03 | 双向定位技术验证 | ADP + UIE | GDE + QSR | D0-09A 临时单向定位方案已准备/修订；D0-09B 待创建/批准，真实环境未运行 |
+| T0-03 | 双向定位技术验证 | ADP + UIE | GDE + QSR | D0-09A 方案与定位摘要探针实现已完成；D0-09B 待创建/批准，真实环境未运行 |
 | T0-04 | 真实分支路径验证 | ADP | TL + QSR | 初步报告完成，能力未确认 |
 | T0-05 | 隐私、权限与探针边界 | QSR | TL | 推荐决策包已获 PO 批准 |
 | T0-06 | 阶段结论与开发放行 | TL | 全体专项角色 | 未开始 |
@@ -60,6 +60,8 @@
 - `evidence/T0-02-S1-uniqueness-r01-r02.md`：D0-08B R01/R02 的非暴露唯一性摘要结果与清理记录。
 - `t0-02-s1-uniqueness-summary-authorization.md`：D0-08A/D0-08B 非暴露唯一性摘要的候选输出契约与两次只读运行授权边界（D0-08A 实现级 GDE/QSR PASS；D0-08B 已批准且 R01/R02 已完成）。
 - `t0-03-s1-locate-authorization.md`：D0-09A/D0-09B S1 临时单向页面定位、滚动、短暂高亮和清理的独立授权方案（D0-09A 已准备；D0-09B 待创建/批准，不解除完整 T0-03 阻塞）。
+- `tools/stage-0/chatgpt-locate-summary-probe.js`：D0-09A T0-03 临时定位摘要探针（0.1.0，尚未获 D0-09B 运行授权）。
+- `tools/stage-0/chatgpt-locate-summary-probe.test.js`：定位摘要探针合成测试（18/18 pass；不访问真实页面）。
 - `06-stage-conclusion.md`：阶段结论；仅在证据齐全后创建。
 
 ## 退出标准

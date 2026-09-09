@@ -1191,3 +1191,32 @@
 
 - 需要完成定位摘要探针和合成测试，经 GDE/QSR 独立复核并获 PO 批准 D0-09B 后，才可执行 R01/R02；D0-09B 还须绑定动作参数、清理 watchdog、实现 SHA-256、测试结果与失效规则。
 - 跨刷新稳定 ID、正式 sourceLocator 和完整双向地图定位仍保持 `unknown`。
+
+---
+
+## 2026-09-09｜阶段：D0-09A T0-03 定位摘要探针实现
+
+### 修改目的
+
+按已复核的 D0-09A 方案实现可测试的临时定位摘要探针，为后续 D0-09B 版本绑定和 PO 运行批准提供实现候选；不执行真实页面动作。
+
+### 实际变更
+
+1. 新增 `chatgpt-locate-summary-probe.js`（`probeVersion=0.1.0`、`schemaVersion=1`，实现 SHA-256=`DE6009330A133C0A8DBFDD65241190E7E9B62664BDBF4645D414153FECF5BBD9`），实现 S1 第 4 条 Assistant 临时目标、一次无动画滚动、视口内视觉确认、临时 overlay、高亮 watchdog 清理、R01/R02 会话哨兵和固定非暴露终态。
+2. 新增 `chatgpt-locate-summary-probe.test.js`（测试文件 SHA-256=`12C8867DDE0CA84465AF87CE2ECF0CBA75938A9BE5E4F2A3D8A325C40A9BC0EF`），覆盖成功生命周期、R01/R02 dispose、非 ChatGPT 门禁、S1 形状、隐藏/离页熔断、路径/内容变化、外部同名 overlay、清理 warning/failed、时钟失败、deadline/abort 和禁止 API 检查。
+3. 更新 T0-03 授权文档与阶段索引，登记实现/测试 SHA-256 和 `18/18 pass`；D0-09B 仍未创建，真实页面仍未运行。
+4. 按 GDE/QSR 复核意见补齐真实 `Promise.race` 运行截止时间、`window` `pagehide` 监听、全路径固定 runtime catch、overlay 挂载/可见确认与隐藏后清理、selector-only 角色分类、主区域替换哨兵及对应回归测试。
+5. 按最终 GDE 复核意见补齐 WeakSet overlay 所有权、run-local abort、路径指纹、属性/文本 MutationObserver 熔断，并新增相应回归测试；再补充动作期间无 history 事件的当前路径复查。
+
+涉及文件：`tools/stage-0/chatgpt-locate-summary-probe.js`、`tools/stage-0/chatgpt-locate-summary-probe.test.js`、`docs/stage-0/t0-03-s1-locate-authorization.md`、`docs/stage-0/README.md`、`CHANGELOG.md`。
+
+### 验证结果
+
+- `node --check tools/stage-0/chatgpt-locate-summary-probe.js` 通过。
+- 定位探针合成测试 `18/18 pass`；既有只读探针测试与定位测试合计 `31/31 pass`。
+- 本轮未访问 ChatGPT、未执行滚动/高亮/导航/输入/发送，未读取或保存正文、属性原值、URL、Cookie、令牌或网络数据。
+
+### 遗留事项
+
+- 必须完成 GDE + QSR 实现级独立复核，并由 PO 明确批准绑定最终版本、schema、SHA-256、动作参数、watchdog、测试结果和 R01/R02 失效规则的 D0-09B，才可进入真实 S1 页面运行。
+- 滚动副作用、稳定 ID、正式 `sourceLocator` 和完整双向地图定位结论仍未取得。

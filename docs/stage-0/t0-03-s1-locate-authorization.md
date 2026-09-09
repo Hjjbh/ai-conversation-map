@@ -32,7 +32,9 @@
 | 动作授权 | `D0-09B` 精确授权一次有界、非持久化但可见的滚动副作用，以及最多 1000 ms、必须清理的自有高亮；不等同于纯只读授权 |
 | 扩展权限 | 不新增 host、storage、network、debugger 或动态脚本权限 |
 
-动作参数和时限固定为：每次运行最多一次 `scrollIntoView({ block: "center", behavior: "auto" })`，滚动确认总时限 1500 ms；不调用 `focus()`、不改变 `activeElement`、不设置 `tabindex`、不派发键盘/鼠标事件；高亮仅使用插件自有、`pointer-events: none` 的临时 overlay，最长 1000 ms，清理 watchdog 截止时间 1500 ms，单次运行总时限 5000 ms。每次运行的 timer、overlay 和临时 listener 在 `finally` 中释放；跨 R01/R02 的生命周期哨兵只在探针会话结束、熔断或 `dispose()` 时断开并清空。
+动作参数和时限固定为：每次运行最多一次 `scrollIntoView({ block: "center", behavior: "auto" })`，滚动确认总时限 1500 ms；不调用 `focus()`、不改变 `activeElement`、不设置 `tabindex`、不派发键盘/鼠标事件；高亮仅使用插件自有、`pointer-events: none` 的临时 overlay，最长 1000 ms，清理 watchdog 截止时间 1500 ms，单次运行总时限 5000 ms。每次运行使用 run-local abort 令牌；`dispose()` 或截止时间到达后，轮询/清理重试在再次读取页面或操作 overlay 前必须退出。每次运行的 timer、overlay 和临时 listener 在 `finally` 中释放；跨 R01/R02 的生命周期哨兵只在探针会话结束、熔断或 `dispose()` 时断开并清空。
+
+角色分类只使用两个固定 CSS selector（`[data-message-author-role="user"]` 与 `[data-message-author-role="assistant"]`）的命中集合；不调用 `getAttribute()` 读取角色或候选属性原值。插件自有 overlay 以仅内存对象身份集合确认所有权；命名空间标记不单独构成信任依据，外部同名节点仍触发会话熔断。
 
 ## 4. 非暴露动作摘要契约
 
@@ -43,7 +45,7 @@
 ```json
 {
   "schemaVersion": "1",
-  "probeVersion": "pending",
+  "probeVersion": "0.1.0",
   "policyVersion": "locate-summary-0.1",
   "capturedAt": "2026-09-09T00:00:00.000Z",
   "status": "observed",
@@ -86,7 +88,7 @@
 - `errorCodes` 必须来自固定白名单，按登记顺序去重，最多 3 项；`limitations` 必须来自固定白名单，按登记顺序去重，最多 4 项，禁止自由文本。
 - 成功终态 `status=observed` 的不变量为：`errorCodes=[]`、`targetCount=1`、`scrollAttempted=true`、`scrollConfirmed=true`、`focusConfirmed=true`、`highlightApplied=true`、`highlightCleared=true`、`valueExposure="none"`，且至少包含 `TARGET_IS_EPHEMERAL`、`LOW_LOCATION_CONFIDENCE`、`NO_STABLE_ID_CONCLUSION` 三个限制码。
 - `status=blocked` 只表示尚未开始页面动作的前置门禁失败，必须有错误码，所有动作确认值为 `false`、`targetCount=0`；页面动作开始后发生的生命周期变化、阶段失败、输出违规或清理问题统一为 `status=error`，必须有错误码，可保留已观测事实（例如清理失败时 `targetCount=1`、`highlightApplied=true`、`highlightCleared=false`），但绝不视为成功证据。
-- 清理正常在 1500 ms 内确认则可报告 `highlightCleared=true`；若首次清理异常但 watchdog 在截止时间前完成，仍可为 `observed`，仅追加 `HIGHLIGHT_CLEANUP_WARNING`。截止时间内未确认清理必须为 `error` + `HIGHLIGHT_CLEANUP_FAILED`，立即 `dispose()` 并作废 R02。
+- 清理正常在 1500 ms 内确认则可报告 `highlightCleared=true`；若首次清理异常但 watchdog 在截止时间前完成，仍可为 `observed`，仅追加 `HIGHLIGHT_CLEANUP_WARNING`。截止时间内未确认清理必须为 `error` + `HIGHLIGHT_CLEANUP_FAILED`，立即 `dispose()` 并作废 R02；不得修改目标原有样式，若自有 overlay 因环境故障残留则该残留本身是失败证据，不得继续动作。
 
 ### 4.2 固定错误码与限制
 
@@ -104,8 +106,8 @@
 
 1. 人工确认仍在原 S1 静态页面，没有刷新、新增消息、流式生成或会话切换；唯一入口是用户在插件面板点击一次“定位 S1 第 4 条 Assistant”，禁止页面加载或 observer 自动运行。
 2. 核对 D0-09B 绑定的探针版本、schema、策略版本、动作参数、清理策略、实现 SHA-256 和测试结果；任一不一致立即停止。
-3. 在 D0-09B 授权会话开始、R01 之前建立仅内存的探针会话哨兵：保存当前 `Document`、main-region 对象和 S1 结构计数的引用/快照，不输出、不持久化；哨兵跨 R01/R02 持续监听 `popstate`/`hashchange`/`beforeunload`/`pagehide`/`visibilitychange`、main-region 替换、消息数量/角色变化和非自有 DOM 变更，并锁存失效状态。每次 run 的临时目标引用只在该 run 存在；会话结束、熔断或 `dispose()` 时断开 observer、移除所有 listener、清空哨兵与目标引用。自有 overlay 位于 main-region 外并按固定命名空间忽略，不掩盖 main-region 的其他变更。
-4. 点击回调只使用临时序号目标，不读取正文或候选属性原值。
+3. 在 D0-09B 授权会话开始、R01 之前建立仅内存的探针会话哨兵：保存当前 `Document`、main-region 对象、S1 结构计数和当前会话路径指纹的引用/快照，不输出、不持久化；哨兵跨 R01/R02 持续监听 `popstate`/`hashchange`/`beforeunload`/`pagehide`/`visibilitychange`、main-region 替换、消息数量/角色变化、属性/文本变化和非自有 DOM 变更，并锁存失效状态。同形结构的路径变化也必须失效。每次 run 的临时目标引用只在该 run 存在；会话结束、熔断或 `dispose()` 时断开 observer、移除所有 listener、清空哨兵与目标引用。自有 overlay 位于 main-region 外并仅按对象身份忽略，不掩盖 main-region 的其他变更。
+4. 点击回调只使用临时序号目标和上述固定角色 selector 命中，不读取正文或候选属性原值。
 5. 按 `scrolling → viewport visibility/focus check → short highlight → cleanup` 顺序执行；滚动最多一次，视觉确认要求目标矩形完整处于同一视口，高亮最多 1000 ms。
 6. 记录 `T0-03-S1-LOCATE-R01` 脱敏摘要；通过敏感字段检查后交给 TL/GDE/QSR。任何生命周期变化、目标歧义或清理失败均立即熔断、调用 `dispose()`，R02 作废；若 R01 成功，保留同一探针会话哨兵等待 R02，不在 R01 的 `finally` 中提前 dispose。
 
@@ -139,7 +141,7 @@
 
 ## 8. 进入 D0-09B 前置条件
 
-1. 完成定位摘要探针实现与合成测试，并在本文补入最终 `probeVersion`、schema、SHA-256 和测试结果。
+1. 定位摘要探针与合成测试已完成：`probeVersion=0.1.0`、`schemaVersion=1`、实现 SHA-256=`DE6009330A133C0A8DBFDD65241190E7E9B62664BDBF4645D414153FECF5BBD9`，测试文件 SHA-256=`12C8867DDE0CA84465AF87CE2ECF0CBA75938A9BE5E4F2A3D8A325C40A9BC0EF`，合成测试 `18/18 pass`；D0-09B 创建时仍须重新核对工作树和哈希。
 2. GDE 与 QSR 分别独立复核动作边界、生命周期哨兵、无正文/无原值出口、异常清理、权限和失败降级，并给出实现级 PASS。
 3. 创建 D0-09B 时必须绑定最终输出字段/枚举、动作参数与时限、cleanup watchdog 策略、实现 SHA-256、测试结果和 R01/R02 失效规则；PO 明确批准后才可运行。
 4. D0-09B 首次只开放当前未刷新 S1 的 R01；仅在 R01 安全接收后开放 R02。刷新、关闭/切换标签页、会话切换、新增消息或任一熔断均立即使剩余额度作废。
@@ -147,6 +149,6 @@
 
 ## 9. 当前状态
 
-**D0-09A 已准备方案；D0-09B 尚未创建；T0-03 页面定位动作未授权、未运行。**
+**D0-09A 方案与实现准备已完成；D0-09B 尚未创建；T0-03 页面定位动作未授权、未运行。**
 
 后续跨刷新稳定 ID、正式 `sourceLocator`、地图到原聊天和原聊天到地图的完整双向链路，必须分别取得证据和授权。
